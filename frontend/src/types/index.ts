@@ -200,6 +200,20 @@ export interface ScanTrendPoint {
   high_risk: number
 }
 
+export interface AgingBucket {
+  label: string
+  count: number
+  threshold_hours: number
+}
+
+export interface SlaSummary {
+  overdue_cases: number
+  aging_buckets: AgingBucket[]
+  average_hours_in_queue: number
+  escalated_cases: number
+  pending_review: number
+}
+
 export interface DashboardSummary {
   generated_at: string
   total_scans: number
@@ -214,6 +228,7 @@ export interface DashboardSummary {
   trend: ScanTrendPoint[]
   top_indicators: TopIndicator[]
   recent_scans: ScanListItem[]
+  sla_summary: SlaSummary
 }
 
 export interface AdminUserRow {

@@ -4,6 +4,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  Clock3,
   FileText,
   Gauge,
   Link2,
@@ -120,6 +121,14 @@ export default function Dashboard() {
   const threatAlerts = (data?.recent_scans ?? [])
     .filter((scan) => scan.risk_level === 'HIGH' || scan.risk_level === 'CRITICAL')
     .slice(0, 3)
+
+  const slaSummary = data?.sla_summary ?? {
+    overdue_cases: 0,
+    aging_buckets: [],
+    average_hours_in_queue: 0,
+    escalated_cases: 0,
+    pending_review: 0,
+  }
 
   const topIndicators = data?.top_indicators ?? []
 
@@ -413,6 +422,59 @@ export default function Dashboard() {
               ))}
             </div>
           )}
+        </CardBody>
+      </Card>
+
+      <Card className="mt-5 border-cyan-500/20 bg-cyan-500/5">
+        <CardHeader
+          title="SLA & queue health"
+          subtitle="Operational pressure on the current review backlog"
+          icon={<Clock3 className="h-4 w-4" aria-hidden />}
+        />
+        <CardBody className="pt-5">
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Overdue</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{slaSummary.overdue_cases}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">cases older than 24h</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Pending</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{slaSummary.pending_review}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">awaiting review</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Escalated</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{slaSummary.escalated_cases}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">high priority</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Avg queue</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{slaSummary.average_hours_in_queue.toFixed(1)}h</p>
+              <p className="mt-1 text-[11px] text-ink-muted">current age</p>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {slaSummary.aging_buckets.length === 0 ? (
+              <p className="text-[13px] text-ink-muted">No backlog yet — run more scans to populate the queue.</p>
+            ) : (
+              slaSummary.aging_buckets.map((bucket) => (
+                <div key={bucket.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3 text-[12px]">
+                    <span className="font-medium text-ink">{bucket.label}</span>
+                    <span className="text-ink-faint">{bucket.count} cases</span>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-abyss">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500"
+                      style={{ width: `${Math.min((bucket.count / Math.max(slaSummary.aging_buckets[0]?.count ?? 1, 1)) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardBody>
       </Card>
 

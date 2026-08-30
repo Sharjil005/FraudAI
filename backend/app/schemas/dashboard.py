@@ -41,6 +41,20 @@ class ScanTrendPoint(BaseModel):
     high_risk: int
 
 
+class AgingBucket(BaseModel):
+    label: str
+    count: int
+    threshold_hours: int
+
+
+class SlaSummary(BaseModel):
+    overdue_cases: int
+    aging_buckets: list[AgingBucket]
+    average_hours_in_queue: float
+    escalated_cases: int
+    pending_review: int
+
+
 class DashboardSummary(BaseModel):
     generated_at: datetime
     total_scans: int
@@ -55,6 +69,7 @@ class DashboardSummary(BaseModel):
     trend: list[ScanTrendPoint]
     top_indicators: list[dict[str, object]]
     recent_scans: list[ScanListItem]
+    sla_summary: SlaSummary
 
 
 class AdminUserRow(BaseModel):

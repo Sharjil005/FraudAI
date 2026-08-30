@@ -85,6 +85,60 @@ def _period_delta(db: Session, user: User | None = None, days: int = 7) -> float
     return round(((current - previous) / previous) * 100, 1)
 
 
+def _sla_summary(db: Session, user: User) -> dict[str, Any]:
+    """Summarise queue age and SLA pressure for the analyst dashboard."""
+    rows = db.execute(
+        select(Scan).where(Scan.user_id == user.id).order_by(Scan.created_at.desc())
+    ).scalars().all()
+
+    pending_review = 0
+    escalated_cases = 0
+    overdue_cases = 0
+    queued_hours: list[float] = []
+
+    now = datetime.now(UTC)
+    thresholds = [
+        {"label": "0-12h", "threshold_hours": 12, "count": 0},
+        {"label": "12-24h", "threshold_hours": 24, "count": 0},
+        {"label": "24-48h", "threshold_hours": 48, "count": 0},
+        {"label": ">48h", "threshold_hours": 9999, "count": 0},
+    ]
+
+    for scan in rows:
+        created_at = scan.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=UTC)
+
+        age_hours = (now - created_at).total_seconds() / 3600.0
+        queued_hours.append(max(0.0, age_hours))
+
+        if scan.status in {"PENDING", "COMPLETED"}:
+            pending_review += 1
+        if scan.status == "ESCALATED":
+            escalated_cases += 1
+        if age_hours > 24 and scan.status in {"PENDING", "COMPLETED", "REVIEWED"}:
+            overdue_cases += 1
+
+        for bucket in thresholds:
+            limit = bucket["threshold_hours"]
+            if age_hours <= limit:
+                bucket["count"] += 1
+                break
+
+    average_hours = sum(queued_hours) / len(queued_hours) if queued_hours else 0.0
+
+    return {
+        "overdue_cases": overdue_cases,
+        "aging_buckets": [
+            {"label": bucket["label"], "count": bucket["count"], "threshold_hours": bucket["threshold_hours"]}
+            for bucket in thresholds
+        ],
+        "average_hours_in_queue": round(average_hours, 1),
+        "escalated_cases": escalated_cases,
+        "pending_review": pending_review,
+    }
+
+
 def dashboard_summary(db: Session, user: User) -> dict[str, Any]:
     """Per-user dashboard payload."""
     risk_counts = _risk_counts(db, user)
@@ -154,6 +208,7 @@ def dashboard_summary(db: Session, user: User) -> dict[str, Any]:
         "trend": trend_series(db, user=user, days=14),
         "top_indicators": _top_indicators(db, user=user, limit=6),
         "recent_scans": [scan_to_list_item(scan) for scan in recent_scans(db, user=user, limit=6)],
+        "sla_summary": _sla_summary(db, user),
     }
 
 

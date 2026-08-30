@@ -266,6 +266,8 @@ def test_dashboard_summary_reflects_scans(auth_client: TestClient) -> None:
     assert len(body["trend"]) == 14
     assert body["recent_scans"]
     assert body["top_indicators"]
+    assert body["sla_summary"]["overdue_cases"] >= 0
+    assert body["sla_summary"]["aging_buckets"]
 
 
 def test_dashboard_summary_is_empty_for_a_new_account(auth_client: TestClient) -> None:
