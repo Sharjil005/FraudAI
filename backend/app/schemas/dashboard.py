@@ -55,6 +55,21 @@ class SlaSummary(BaseModel):
     pending_review: int
 
 
+class WorkloadSummary(BaseModel):
+    my_assigned_cases: int
+    unassigned_cases: int
+    escalated_workload: int
+    reviewed_today: int
+    active_analysts: int
+
+
+class ConfidenceSummary(BaseModel):
+    low: int
+    medium: int
+    high: int
+    review_required: int
+
+
 class DashboardSummary(BaseModel):
     generated_at: datetime
     total_scans: int
@@ -70,6 +85,8 @@ class DashboardSummary(BaseModel):
     top_indicators: list[dict[str, object]]
     recent_scans: list[ScanListItem]
     sla_summary: SlaSummary
+    workload_summary: WorkloadSummary
+    confidence_summary: ConfidenceSummary
 
 
 class AdminUserRow(BaseModel):

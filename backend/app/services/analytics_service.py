@@ -139,6 +139,98 @@ def _sla_summary(db: Session, user: User) -> dict[str, Any]:
     }
 
 
+def _workload_summary(db: Session, user: User) -> dict[str, Any]:
+    """Summarise analyst workload and assignment pressure."""
+    my_assigned_cases = int(
+        db.execute(
+            select(func.count(Scan.id)).where(
+                Scan.user_id == user.id,
+                Scan.assigned_to.isnot(None),
+                Scan.assigned_to != "",
+            )
+        ).scalar()
+        or 0
+    )
+
+    unassigned_cases = int(
+        db.execute(
+            select(func.count(Scan.id)).where(
+                Scan.user_id == user.id,
+                (Scan.assigned_to.is_(None)) | (Scan.assigned_to == ""),
+            )
+        ).scalar()
+        or 0
+    )
+
+    escalated_workload = int(
+        db.execute(
+            select(func.count(Scan.id)).where(
+                Scan.user_id == user.id,
+                Scan.status == "ESCALATED",
+            )
+        ).scalar()
+        or 0
+    )
+
+    reviewed_today = int(
+        db.execute(
+            select(func.count(Scan.id)).where(
+                Scan.user_id == user.id,
+                Scan.status == "REVIEWED",
+                Scan.created_at >= datetime.now(UTC) - timedelta(days=1),
+            )
+        ).scalar()
+        or 0
+    )
+
+    active_analysts = int(
+        db.execute(
+            select(func.count(User.id)).where(
+                User.id.in_(
+                    select(Scan.user_id).where(Scan.assigned_to.isnot(None), Scan.assigned_to != "")
+                )
+            )
+        ).scalar()
+        or 0
+    )
+
+    return {
+        "my_assigned_cases": my_assigned_cases,
+        "unassigned_cases": unassigned_cases,
+        "escalated_workload": escalated_workload,
+        "reviewed_today": reviewed_today,
+        "active_analysts": active_analysts,
+    }
+
+
+def _confidence_summary(db: Session, user: User) -> dict[str, int]:
+    """Bucket result confidence to help analysts spot cases needing manual review."""
+    scans = db.execute(
+        select(Scan).where(Scan.user_id == user.id).order_by(Scan.created_at.desc())
+    ).scalars().all()
+
+    summary = {"low": 0, "medium": 0, "high": 0, "review_required": 0}
+    for scan in scans:
+        confidence = 0.0
+        assessment = scan.risk_assessment
+        if assessment is not None:
+            confidence = float(assessment.confidence)
+        elif scan.detail is not None:
+            confidence = float((scan.detail.analysis_details or {}).get("confidence", 0.0) or 0.0)
+
+        if confidence < 0.5:
+            summary["low"] += 1
+        elif confidence < 0.75:
+            summary["medium"] += 1
+        else:
+            summary["high"] += 1
+
+        if confidence < 0.75 and (scan.status in {"PENDING", "REVIEWED", "ESCALATED"} or scan.risk_assessment is not None):
+            summary["review_required"] += 1
+
+    return summary
+
+
 def dashboard_summary(db: Session, user: User) -> dict[str, Any]:
     """Per-user dashboard payload."""
     risk_counts = _risk_counts(db, user)
@@ -209,6 +301,8 @@ def dashboard_summary(db: Session, user: User) -> dict[str, Any]:
         "top_indicators": _top_indicators(db, user=user, limit=6),
         "recent_scans": [scan_to_list_item(scan) for scan in recent_scans(db, user=user, limit=6)],
         "sla_summary": _sla_summary(db, user),
+        "workload_summary": _workload_summary(db, user),
+        "confidence_summary": _confidence_summary(db, user),
     }
 
 

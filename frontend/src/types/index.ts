@@ -214,6 +214,21 @@ export interface SlaSummary {
   pending_review: number
 }
 
+export interface WorkloadSummary {
+  my_assigned_cases: number
+  unassigned_cases: number
+  escalated_workload: number
+  reviewed_today: number
+  active_analysts: number
+}
+
+export interface ConfidenceSummary {
+  low: number
+  medium: number
+  high: number
+  review_required: number
+}
+
 export interface DashboardSummary {
   generated_at: string
   total_scans: number
@@ -229,6 +244,8 @@ export interface DashboardSummary {
   top_indicators: TopIndicator[]
   recent_scans: ScanListItem[]
   sla_summary: SlaSummary
+  workload_summary: WorkloadSummary
+  confidence_summary: ConfidenceSummary
 }
 
 export interface AdminUserRow {

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import sqlite3
+
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
 
 NEW_ACCOUNT = {
     "name": "Aarav Mehta",
@@ -108,3 +111,54 @@ def test_other_reserved_domains_are_still_rejected(client: TestClient) -> None:
     for email in ("x@evil.invalid", "x@thing.onion", "a@b", "@nope.com"):
         response = client.post("/api/auth/register", json={**NEW_ACCOUNT, "email": email})
         assert response.status_code == 422, f"{email} should be rejected: {response.text}"
+
+
+def test_init_db_repairs_legacy_sqlite_schema(tmp_path, monkeypatch) -> None:
+    db_path = tmp_path / "legacy-fraudshield.db"
+    db_path.touch()
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                email TEXT,
+                password_hash TEXT,
+                role TEXT,
+                is_active BOOLEAN,
+                created_at TEXT
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE scans (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER,
+                scan_type TEXT,
+                status TEXT,
+                target_label TEXT,
+                created_at TEXT
+            )
+            """
+        )
+        conn.commit()
+
+    monkeypatch.setattr(
+        "app.database.init_db.settings.DATABASE_URL", f"sqlite:///{db_path.as_posix()}"
+    )
+    monkeypatch.setattr(
+        "app.database.init_db.engine",
+        create_engine(f"sqlite:///{db_path.as_posix()}", connect_args={"check_same_thread": False}),
+    )
+
+    from app.database.init_db import repair_sqlite_schema
+
+    repair_sqlite_schema()
+
+    with sqlite3.connect(db_path) as conn:
+        columns = [row[1] for row in conn.execute("PRAGMA table_info(scans)").fetchall()]
+
+    assert "reviewer_name" in columns
+    assert "assigned_to" in columns
+    assert "status_history" in columns

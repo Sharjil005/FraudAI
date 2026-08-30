@@ -210,6 +210,26 @@ def test_case_assignment_and_status_history_are_recorded(auth_client: TestClient
     assert body["status_history"][-1]["reviewer_name"] == "Analyst B"
 
 
+def test_analyst_feedback_is_recorded_for_active_learning(auth_client: TestClient) -> None:
+    scan_id = auth_client.post("/api/scan/url", json={"url": DEMO_URL}).json()["scan"]["scan_id"]
+
+    response = auth_client.post(
+        f"/api/scans/{scan_id}/feedback",
+        json={
+            "label": "SUSPICIOUS",
+            "confidence": 0.92,
+            "notes": "Strong phishing pattern matched by custom review.",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["feedback"]["label"] == "SUSPICIOUS"
+    assert body["feedback"]["confidence"] == 0.92
+    assert body["feedback"]["notes"] == "Strong phishing pattern matched by custom review."
+    assert body["feedback"]["reviewed_by"]
+
+
 def test_bulk_scan_status_update_applies_to_selected_cases(auth_client: TestClient) -> None:
     first = auth_client.post("/api/scan/url", json={"url": DEMO_URL}).json()["scan"]["scan_id"]
     second = auth_client.post("/api/scan/message", json={"message": "Urgent bank update please verify now"}).json()["scan"]["scan_id"]
@@ -268,6 +288,10 @@ def test_dashboard_summary_reflects_scans(auth_client: TestClient) -> None:
     assert body["top_indicators"]
     assert body["sla_summary"]["overdue_cases"] >= 0
     assert body["sla_summary"]["aging_buckets"]
+    assert body["workload_summary"]["my_assigned_cases"] >= 0
+    assert body["workload_summary"]["unassigned_cases"] >= 0
+    assert body["confidence_summary"]["review_required"] >= 0
+    assert body["confidence_summary"]["high"] >= 0
 
 
 def test_dashboard_summary_is_empty_for_a_new_account(auth_client: TestClient) -> None:

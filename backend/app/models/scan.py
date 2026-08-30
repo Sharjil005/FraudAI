@@ -60,6 +60,7 @@ class Scan(Base):
     analyst_notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
     escalation_reason: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     status_history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    feedback: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True, nullable=False
     )

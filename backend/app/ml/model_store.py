@@ -18,10 +18,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from app.core.config import settings
 from app.core.logging_config import get_logger
 from app.ml.datasets import build_message_dataset, build_url_dataset
 from app.ml.features import FEATURE_NAMES, extract_url_features
+from app.models.scan import Scan
+from app.models.user import User
 
 logger = get_logger(__name__)
 
@@ -132,10 +137,42 @@ class ModelRegistry:
 
     # ---- Training -------------------------------------------------------
     @staticmethod
-    def _train_url_model() -> ModelBundle:
-        urls, labels = build_url_dataset()
+    def _label_to_target(label: str) -> int | None:
+        normalized = label.strip().upper()
+        safe_labels = {
+            "SAFE",
+            "BENIGN",
+            "LEGIT",
+            "LEGITIMATE",
+            "NOT_SUSPICIOUS",
+            "NO_THREAT",
+            "NORMAL",
+            "FALSE_POSITIVE",
+        }
+        suspicious_labels = {
+            "SUSPICIOUS",
+            "PHISHING",
+            "SCAM",
+            "MALICIOUS",
+            "FRAUD",
+            "THREAT",
+            "HIGH_RISK",
+            "RISKY",
+        }
+
+        if normalized in safe_labels:
+            return 0
+        if normalized in suspicious_labels:
+            return 1
+        return None
+
+    @staticmethod
+    def _train_url_model_from_samples(urls: list[str], labels: list[int]) -> ModelBundle:
+        if not urls:
+            raise ValueError("No URL training data available.")
+
         matrix = np.array([extract_url_features(u).to_vector() for u in urls], dtype=float)
-        target = np.array(labels)
+        target = np.array(labels, dtype=int)
 
         x_train, x_test, y_train, y_test = train_test_split(
             matrix, target, test_size=0.2, random_state=42, stratify=target
@@ -171,9 +208,16 @@ class ModelRegistry:
         )
 
     @staticmethod
-    def _train_message_model() -> ModelBundle:
-        texts, labels = build_message_dataset()
-        target = np.array(labels)
+    def _train_url_model() -> ModelBundle:
+        urls, labels = build_url_dataset()
+        return ModelRegistry._train_url_model_from_samples(urls, labels)
+
+    @staticmethod
+    def _train_message_model_from_samples(texts: list[str], labels: list[int]) -> ModelBundle:
+        if not texts:
+            raise ValueError("No message training data available.")
+
+        target = np.array(labels, dtype=int)
 
         pipeline = Pipeline(
             [
@@ -202,8 +246,6 @@ class ModelRegistry:
         pipeline.fit(x_train, y_train)
         accuracy = float(accuracy_score(y_test, pipeline.predict(x_test)))
 
-        # Refit on the full corpus once the score is recorded – the corpus is
-        # small, so every labelled example matters at inference time.
         pipeline.fit(texts, target)
         return ModelBundle(
             pipeline,
@@ -215,6 +257,11 @@ class ModelRegistry:
                 "vocabulary_size": int(len(pipeline.named_steps["tfidf"].vocabulary_)),
             },
         )
+
+    @staticmethod
+    def _train_message_model() -> ModelBundle:
+        texts, labels = build_message_dataset()
+        return ModelRegistry._train_message_model_from_samples(texts, labels)
 
     # ---- Inference ------------------------------------------------------
     def predict_url(self, features) -> tuple[float, dict[str, Any]] | None:
@@ -269,6 +316,91 @@ class ModelRegistry:
             "message_model": message_bundle.metadata if message_bundle else None,
             "mode": "hybrid_ml_heuristic" if url_bundle or message_bundle else "heuristic_only",
         }
+
+    def feedback_examples(self, db: Session, *, user: User | None = None) -> tuple[list[str], list[int], list[str]]:
+        urls: list[str] = []
+        labels: list[int] = []
+        kinds: list[str] = []
+
+        statement = select(Scan).where(Scan.feedback.isnot(None))
+        if user is not None:
+            statement = statement.where(Scan.user_id == user.id)
+
+        for scan in db.execute(statement).scalars().all():
+            payload = scan.feedback or {}
+            target = self._label_to_target(str(payload.get("label", "")))
+            if target is None:
+                continue
+
+            if scan.url_scan is not None:
+                urls.append(scan.url_scan.url)
+                labels.append(target)
+                kinds.append("URL")
+            elif scan.message_scan is not None:
+                urls.append(scan.message_scan.message_text)
+                labels.append(target)
+                kinds.append("MESSAGE")
+
+        return urls, labels, kinds
+
+    def retrain_from_feedback(self, db: Session, *, user: User | None = None, min_examples: int = 5) -> dict[str, Any]:
+        if not SKLEARN_AVAILABLE:
+            return {"retrained": False, "reason": "scikit-learn unavailable", "feedback_examples": 0}
+
+        url_samples, url_labels, url_kinds = self.feedback_examples(db, user=user)
+        message_samples, message_labels, message_kinds = self.feedback_examples(db, user=user)
+
+        url_result: dict[str, Any] = {"retrained": False, "samples": 0, "kind": "URL"}
+        message_result: dict[str, Any] = {"retrained": False, "samples": 0, "kind": "MESSAGE"}
+
+        if len(url_samples) >= min_examples:
+            base_urls, base_url_labels = build_url_dataset()
+            combined_urls = base_urls + url_samples
+            combined_labels = base_url_labels + url_labels
+            bundle = self._train_url_model_from_samples(combined_urls, combined_labels)
+            self._url = bundle
+            self._url_failed = False
+            self._persist_model(URL_MODEL_FILE, bundle)
+            url_result = {
+                "retrained": True,
+                "samples": len(url_samples),
+                "kind": "URL",
+                "accuracy": bundle.metadata.get("accuracy"),
+            }
+
+        if len(message_samples) >= min_examples:
+            base_texts, base_labels = build_message_dataset()
+            combined_texts = base_texts + message_samples
+            combined_labels = base_labels + message_labels
+            bundle = self._train_message_model_from_samples(combined_texts, combined_labels)
+            self._message = bundle
+            self._message_failed = False
+            self._persist_model(MESSAGE_MODEL_FILE, bundle)
+            message_result = {
+                "retrained": True,
+                "samples": len(message_samples),
+                "kind": "MESSAGE",
+                "accuracy": bundle.metadata.get("accuracy"),
+            }
+
+        return {
+            "retrained": url_result["retrained"] or message_result["retrained"],
+            "feedback_examples": len(url_samples) + len(message_samples),
+            "url": url_result,
+            "message": message_result,
+            "source_types": {"url": url_kinds, "message": message_kinds},
+        }
+
+    def _persist_model(self, filename: str, bundle: ModelBundle) -> None:
+        path = self.model_dir / filename
+        try:
+            self.model_dir.mkdir(parents=True, exist_ok=True)
+            joblib.dump(
+                {"version": MODEL_FORMAT_VERSION, "estimator": bundle.estimator, "metadata": bundle.metadata},
+                path,
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.warning("Could not persist model %s: %s", filename, exc)
 
 
 registry = ModelRegistry()

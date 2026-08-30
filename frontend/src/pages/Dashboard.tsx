@@ -130,6 +130,21 @@ export default function Dashboard() {
     pending_review: 0,
   }
 
+  const workloadSummary = data?.workload_summary ?? {
+    my_assigned_cases: 0,
+    unassigned_cases: 0,
+    escalated_workload: 0,
+    reviewed_today: 0,
+    active_analysts: 0,
+  }
+
+  const confidenceSummary = data?.confidence_summary ?? {
+    low: 0,
+    medium: 0,
+    high: 0,
+    review_required: 0,
+  }
+
   const topIndicators = data?.top_indicators ?? []
 
   useEffect(() => {
@@ -474,6 +489,75 @@ export default function Dashboard() {
                 </div>
               ))
             )}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card className="mt-5 border-violet-500/20 bg-violet-500/5">
+        <CardHeader
+          title="Analyst workload"
+          subtitle="Assignment balance and review throughput across the current queue"
+          icon={<Activity className="h-4 w-4" aria-hidden />}
+        />
+        <CardBody className="pt-5">
+          <div className="grid gap-3 md:grid-cols-5">
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Assigned</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{workloadSummary.my_assigned_cases}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">your queue</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Unassigned</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{workloadSummary.unassigned_cases}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">need triage</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Escalated</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{workloadSummary.escalated_workload}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">high priority</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Reviewed</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{workloadSummary.reviewed_today}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">last 24h</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Analysts</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{workloadSummary.active_analysts}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">active today</p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card className="mt-5 border-amber-500/20 bg-amber-500/5">
+        <CardHeader
+          title="Confidence calibration"
+          subtitle="A quick view of which scans still need analyst review"
+          icon={<Gauge className="h-4 w-4" aria-hidden />}
+        />
+        <CardBody className="pt-5">
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Low</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{confidenceSummary.low}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">confidence</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Medium</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{confidenceSummary.medium}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">watchlist</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">High</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{confidenceSummary.high}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">auto-accepted</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Review</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{confidenceSummary.review_required}</p>
+              <p className="mt-1 text-[11px] text-ink-muted">manual review</p>
+            </div>
           </div>
         </CardBody>
       </Card>

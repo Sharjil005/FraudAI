@@ -16,6 +16,34 @@ from app.models.user import User, UserRole
 logger = get_logger(__name__)
 
 
+def repair_sqlite_schema() -> None:
+    """Backfill missing SQLite columns for older app versions without rebuilding the DB."""
+    if not settings.is_sqlite:
+        return
+
+    with engine.begin() as conn:
+        try:
+            table_info = conn.exec_driver_sql("PRAGMA table_info(scans)").fetchall()
+        except Exception:  # pragma: no cover - table may not exist yet
+            return
+
+        existing_columns = {row[1] for row in table_info}
+        additions = [
+            ("reviewer_name", "VARCHAR(255) DEFAULT '' NOT NULL"),
+            ("assigned_to", "VARCHAR(255) DEFAULT '' NOT NULL"),
+            ("analyst_notes", "TEXT DEFAULT '' NOT NULL"),
+            ("escalation_reason", "VARCHAR(255) DEFAULT '' NOT NULL"),
+            ("status_history", "JSON DEFAULT '[]' NOT NULL"),
+            ("feedback", "JSON DEFAULT '{}' NOT NULL"),
+        ]
+
+        for column_name, ddl in additions:
+            if column_name in existing_columns:
+                continue
+            conn.exec_driver_sql(f"ALTER TABLE scans ADD COLUMN {column_name} {ddl}")
+            logger.warning("Added missing SQLite column %s to scans table.", column_name)
+
+
 def create_tables() -> None:
     """Create any missing tables. Safe to call on every startup."""
     Base.metadata.create_all(bind=engine)
@@ -66,4 +94,5 @@ def create_bootstrap_users() -> None:
 
 def init_db() -> None:
     create_tables()
+    repair_sqlite_schema()
     create_bootstrap_users()

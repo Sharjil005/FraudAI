@@ -92,6 +92,12 @@ class ScanStatusUpdateRequest(BaseModel):
     escalation_reason: str | None = None
 
 
+class ScanFeedbackRequest(BaseModel):
+    label: str = Field(..., min_length=1, max_length=64)
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
 class BulkScanStatusUpdateRequest(BaseModel):
     scan_ids: list[int] = Field(..., min_length=1)
     status: ScanStatus
@@ -169,6 +175,7 @@ class ScanListItem(BaseModel):
     analyst_notes: str = ""
     escalation_reason: str = ""
     status_history: list[dict[str, Any]] = Field(default_factory=list)
+    feedback: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     target_label: str
     prediction: str
@@ -191,6 +198,7 @@ class ScanDetail(BaseModel):
     analyst_notes: str = ""
     escalation_reason: str = ""
     status_history: list[dict[str, Any]] = Field(default_factory=list)
+    feedback: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     target_label: str
     prediction: str

@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.core.deps import AdminUser, DbSession
+from app.ml.model_store import registry
 from app.models.user import User
 from app.schemas.auth import UserOut
 from app.schemas.dashboard import AdminAnalytics
@@ -26,6 +27,14 @@ def analytics(db: DbSession, admin: AdminUser) -> dict:
 @router.get("/users", response_model=list[UserOut], summary="List all platform users (admin only)")
 def list_users(db: DbSession, admin: AdminUser) -> list[User]:
     return list(db.execute(select(User).order_by(User.created_at.desc())).scalars().all())
+
+
+@router.post(
+    "/model/retrain",
+    summary="Retrain the ML models from analyst feedback (admin only)",
+)
+def retrain_models(db: DbSession, admin: AdminUser) -> dict:
+    return registry.retrain_from_feedback(db, min_examples=1)
 
 
 @router.patch(
