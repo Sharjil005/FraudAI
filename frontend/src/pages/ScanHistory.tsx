@@ -86,6 +86,57 @@ export default function ScanHistory() {
     setSearch('')
   }
 
+  function exportCsv() {
+    const rows = data?.items ?? []
+    if (!rows.length) {
+      toast.push('There are no scans to export right now.', 'info')
+      return
+    }
+
+    const header = [
+      'scan_id',
+      'scan_type',
+      'target_label',
+      'prediction',
+      'risk_score',
+      'risk_level',
+      'indicator_count',
+      'status',
+      'created_at',
+    ]
+
+    const escapeCsv = (value: string | number | null | undefined) => {
+      const text = String(value ?? '')
+      return `"${text.replace(/"/g, '""')}"`
+    }
+
+    const csv = [
+      header.join(','),
+      ...rows.map((row) =>
+        [
+          row.scan_id,
+          row.scan_type,
+          row.target_label,
+          row.prediction,
+          row.risk_score,
+          row.risk_level,
+          row.indicator_count,
+          row.status,
+          row.created_at,
+        ].map((value) => escapeCsv(value)).join(','),
+      ),
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `fraudshield-scan-history-${Date.now()}.csv`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    toast.success(`Downloaded ${rows.length} scan${rows.length === 1 ? '' : 's'} as CSV`)
+  }
+
   return (
     <div>
       <PageHeader
@@ -94,10 +145,15 @@ export default function ScanHistory() {
         description="Every analysis you have run, searchable and filterable. Open any scan for the full explainable breakdown or download its report."
         icon={<History className="h-5 w-5" aria-hidden />}
         action={
-          <Button variant="secondary" size="sm" onClick={reload} disabled={loading}>
-            <RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} aria-hidden />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={reload} disabled={loading}>
+              <RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} aria-hidden />
+              Refresh
+            </Button>
+            <Button variant="primary" size="sm" onClick={exportCsv} disabled={loading || !data?.items.length}>
+              Export CSV
+            </Button>
+          </div>
         }
       />
 

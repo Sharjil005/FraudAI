@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Activity,
   BarChart3,
@@ -36,7 +36,8 @@ import { adminService } from '@/services/adminService'
 import { apiErrorMessage } from '@/services/api'
 import { formatDate, formatDateTime, humanise, initials } from '@/lib/format'
 import { cn } from '@/lib/cn'
-import type { AdminAnalytics, AdminUserRow, StatCard } from '@/types'
+import { RISK_LEVELS } from '@/lib/risk'
+import type { AdminAnalytics, AdminUserRow, RiskLevel, StatCard } from '@/types'
 
 const STAT_ICON: Record<string, typeof Activity> = {
   total_users: Users,
@@ -66,6 +67,48 @@ export default function AdminDashboard() {
     [],
   )
   const [togglingId, setTogglingId] = useState<number | null>(null)
+  const [suspiciousFilter, setSuspiciousFilter] = useState<'ALL' | RiskLevel>('ALL')
+
+  const filteredSuspiciousScans = useMemo(() => {
+    const items = data?.recent_suspicious_scans ?? []
+    if (suspiciousFilter === 'ALL') return items
+    return items.filter((scan) => scan.risk_level === suspiciousFilter)
+  }, [data?.recent_suspicious_scans, suspiciousFilter])
+
+  function exportSuspiciousCsv() {
+    if (!filteredSuspiciousScans.length) {
+      toast.push('There are no suspicious scans to export for this view.', 'info')
+      return
+    }
+
+    const header = ['scan_id', 'scan_type', 'target_label', 'prediction', 'risk_score', 'risk_level', 'status', 'created_at']
+    const csv = [
+      header.join(','),
+      ...filteredSuspiciousScans.map((scan) =>
+        [
+          scan.scan_id,
+          scan.scan_type,
+          scan.target_label,
+          scan.prediction,
+          scan.risk_score,
+          scan.risk_level,
+          scan.status,
+          scan.created_at,
+        ]
+          .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
+          .join(','),
+      ),
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `fraudshield-suspicious-scans-${suspiciousFilter.toLowerCase()}.csv`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    toast.success(`Exported ${filteredSuspiciousScans.length} scan${filteredSuspiciousScans.length === 1 ? '' : 's'}.`)
+  }
 
   async function toggleUser(row: AdminUserRow) {
     const nextActive = !row.is_active
@@ -232,9 +275,33 @@ export default function AdminDashboard() {
           title="Recent high-risk activity"
           subtitle="Latest scans that scored HIGH or CRITICAL, across every account"
           icon={<ShieldAlert className="h-4 w-4" aria-hidden />}
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 rounded-lg border border-hairline bg-abyss/40 p-1">
+                {['ALL', ...RISK_LEVELS.filter((level) => level !== 'LOW' && level !== 'MEDIUM')].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setSuspiciousFilter(level as 'ALL' | RiskLevel)}
+                    className={cn(
+                      'rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors',
+                      suspiciousFilter === level
+                        ? 'bg-cyan-500/20 text-cyan-200'
+                        : 'text-ink-faint hover:text-ink',
+                    )}
+                  >
+                    {level === 'ALL' ? 'All' : level}
+                  </button>
+                ))}
+              </div>
+              <Button variant="secondary" size="sm" onClick={exportSuspiciousCsv} disabled={loading || !filteredSuspiciousScans.length}>
+                Export CSV
+              </Button>
+            </div>
+          }
         />
         <ScanHistoryTable
-          items={data?.recent_suspicious_scans ?? []}
+          items={filteredSuspiciousScans}
           loading={loading && !data}
           compact
           emptyTitle="No high-risk scans yet"
