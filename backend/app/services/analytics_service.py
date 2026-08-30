@@ -332,6 +332,47 @@ def _top_indicators(db: Session, user: User | None = None, limit: int = 8) -> li
     ]
 
 
+def _drift_summary(db: Session) -> dict[str, Any]:
+    """Operational AI health summary for model governance and retraining readiness."""
+    total_scans = int(db.execute(select(func.count(Scan.id))).scalar() or 0)
+    feedback_scans = int(
+        db.execute(select(func.count(Scan.id)).where(Scan.feedback.isnot(None))).scalar() or 0
+    )
+    recent_feedback = int(
+        db.execute(
+            select(func.count(Scan.id)).where(
+                Scan.feedback.isnot(None),
+                Scan.created_at >= datetime.now(UTC) - timedelta(days=7),
+            )
+        ).scalar()
+        or 0
+    )
+
+    model_status = registry.status()
+    url_accuracy = float((model_status.get("url_model") or {}).get("accuracy", 0.0) or 0.0)
+    message_accuracy = float((model_status.get("message_model") or {}).get("accuracy", 0.0) or 0.0)
+    avg_accuracy = round((url_accuracy + message_accuracy) / 2, 4) if url_accuracy or message_accuracy else 0.0
+
+    feedback_coverage = round((feedback_scans / total_scans) * 100, 2) if total_scans else 0.0
+    retraining_ready = feedback_scans >= 5 or recent_feedback >= 2
+    if avg_accuracy >= 0.82 and feedback_coverage >= 12:
+        drift_risk = "LOW"
+    elif avg_accuracy >= 0.7 and feedback_coverage >= 5:
+        drift_risk = "MEDIUM"
+    else:
+        drift_risk = "HIGH"
+
+    return {
+        "feedback_coverage": feedback_coverage,
+        "feedback_scans": feedback_scans,
+        "recent_feedback_scans": recent_feedback,
+        "retraining_ready": retraining_ready,
+        "avg_model_accuracy": avg_accuracy,
+        "model_drift_risk": drift_risk,
+        "needs_attention": not retraining_ready or drift_risk == "HIGH",
+    }
+
+
 def admin_analytics(db: Session) -> dict[str, Any]:
     """Platform-wide analytics for the admin dashboard."""
     risk_counts = _risk_counts(db)
@@ -454,4 +495,5 @@ def admin_analytics(db: Session) -> dict[str, Any]:
         "recent_suspicious_scans": [scan_to_list_item(scan) for scan in suspicious],
         "users": users,
         "model_status": registry.status(),
+        "drift_summary": _drift_summary(db),
     }

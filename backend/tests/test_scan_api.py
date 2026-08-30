@@ -309,6 +309,8 @@ def test_admin_analytics_aggregates_platform_data(admin_client: TestClient) -> N
     assert body["top_indicators"]
     assert body["users"]
     assert body["model_status"]
+    assert body["drift_summary"]["feedback_coverage"] >= 0
+    assert "retraining_ready" in body["drift_summary"]
 
 
 def test_pdf_report_downloads(auth_client: TestClient) -> None:

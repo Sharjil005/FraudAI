@@ -100,6 +100,16 @@ class AdminUserRow(BaseModel):
     high_risk_count: int
 
 
+class DriftSummary(BaseModel):
+    feedback_coverage: float
+    feedback_scans: int
+    recent_feedback_scans: int
+    retraining_ready: bool
+    avg_model_accuracy: float
+    model_drift_risk: str
+    needs_attention: bool
+
+
 class AdminAnalytics(BaseModel):
     generated_at: datetime
     total_users: int
@@ -117,3 +127,4 @@ class AdminAnalytics(BaseModel):
     recent_suspicious_scans: list[ScanListItem]
     users: list[AdminUserRow]
     model_status: dict[str, object]
+    drift_summary: DriftSummary
