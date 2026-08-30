@@ -55,6 +55,11 @@ export const scanService = {
     return data
   },
 
+  async updateStatus(scanId: number, status: ScanDetail['status']): Promise<ScanDetail> {
+    const { data } = await api.patch<ScanDetail>(`/scans/${scanId}/status`, { status })
+    return data
+  },
+
   async remove(scanId: number): Promise<void> {
     await api.delete(`/scans/${scanId}`)
   },

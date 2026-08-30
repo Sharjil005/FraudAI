@@ -158,6 +158,18 @@ def test_scan_detail_is_returned(auth_client: TestClient) -> None:
     assert body["analysis_details"]
 
 
+def test_scan_status_can_be_updated_for_triage(auth_client: TestClient) -> None:
+    scan_id = auth_client.post("/api/scan/url", json={"url": DEMO_URL}).json()["scan"]["scan_id"]
+
+    response = auth_client.patch(
+        f"/api/scans/{scan_id}/status",
+        json={"status": "REVIEWED"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "REVIEWED"
+
+
 def test_missing_scan_returns_404(auth_client: TestClient) -> None:
     assert auth_client.get("/api/scans/999999").status_code == 404
 

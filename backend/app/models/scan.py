@@ -25,6 +25,9 @@ class ScanStatus(str, enum.Enum):
     PENDING = "PENDING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    REVIEWED = "REVIEWED"
+    ESCALATED = "ESCALATED"
+    DISMISSED = "DISMISSED"
 
 
 class RiskLevel(str, enum.Enum):

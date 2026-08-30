@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.core.deps import CurrentUser, DbSession, Pagination
 from app.models.scan import RiskLevel, Scan, ScanType
 from app.models.user import UserRole
-from app.schemas.scan import ScanDetail, ScanListResponse
+from app.schemas.scan import ScanDetail, ScanListResponse, ScanStatusUpdateRequest
 from app.services.scan_service import list_scans, scan_to_detail, scan_to_list_item
 
 router = APIRouter(prefix="/scans", tags=["Scan History"])
@@ -62,6 +62,32 @@ def get_scan(scan_id: int, db: DbSession, current_user: CurrentUser) -> dict:
             detail="You do not have access to this scan.",
         )
     return scan_to_detail(scan, include_user=is_admin)
+
+
+@router.patch(
+    "/{scan_id}/status",
+    response_model=ScanDetail,
+    summary="Update a scan's analyst triage status",
+)
+def update_scan_status(
+    scan_id: int,
+    payload: ScanStatusUpdateRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> dict:
+    scan = db.get(Scan, scan_id)
+    if scan is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found.")
+    if scan.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this scan.",
+        )
+
+    scan.status = payload.status
+    db.commit()
+    db.refresh(scan)
+    return scan_to_detail(scan, include_user=current_user.role == UserRole.ADMIN)
 
 
 @router.delete(

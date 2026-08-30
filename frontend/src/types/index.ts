@@ -5,7 +5,13 @@
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 export type ScanType = 'URL' | 'MESSAGE' | 'DOCUMENT'
-export type ScanStatus = 'PENDING' | 'COMPLETED' | 'FAILED'
+export type ScanStatus =
+  | 'PENDING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REVIEWED'
+  | 'ESCALATED'
+  | 'DISMISSED'
 export type UserRole = 'USER' | 'ADMIN'
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical'
 

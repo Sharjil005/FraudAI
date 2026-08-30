@@ -84,6 +84,10 @@ class ScanEnvelope(BaseModel):
     target_label: str
 
 
+class ScanStatusUpdateRequest(BaseModel):
+    status: ScanStatus
+
+
 # --- Modality results ---------------------------------------------------------
 
 

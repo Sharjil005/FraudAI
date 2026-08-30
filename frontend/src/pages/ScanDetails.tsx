@@ -35,6 +35,7 @@ export default function ScanDetails() {
   const toast = useToast()
   const [downloading, setDownloading] = useState<'pdf' | 'html' | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [statusSaving, setStatusSaving] = useState(false)
 
   const { data, loading, error } = useAsync<ScanDetail>(
     () => scanService.detail(scanId ?? ''),
@@ -51,6 +52,20 @@ export default function ScanDetails() {
       toast.error(apiErrorMessage(caught, 'The report could not be downloaded.'))
     } finally {
       setDownloading(null)
+    }
+  }
+
+  async function handleTriage(status: ScanDetail['status']) {
+    if (!data) return
+    setStatusSaving(true)
+    try {
+      const updated = await scanService.updateStatus(data.scan_id, status)
+      data.status = updated.status
+      toast.success(`Scan marked as ${status.toLowerCase().replace('_', ' ')}.`)
+    } catch (caught) {
+      toast.error(apiErrorMessage(caught, 'The triage status could not be updated.'))
+    } finally {
+      setStatusSaving(false)
     }
   }
 
@@ -143,6 +158,22 @@ export default function ScanDetails() {
               <FileCode2 className="h-4 w-4" aria-hidden />
               HTML
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleTriage('REVIEWED')}
+              loading={statusSaving}
+            >
+              Mark reviewed
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleTriage('ESCALATED')}
+              loading={statusSaving}
+            >
+              Escalate
+            </Button>
             <Button size="sm" variant="danger" onClick={handleDelete} loading={deleting}>
               <Trash2 className="h-4 w-4" aria-hidden />
               Delete
@@ -150,6 +181,15 @@ export default function ScanDetails() {
           </div>
         }
       />
+
+      <div className="mb-5 flex items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+          Status
+        </span>
+        <Badge tone={data.status === 'REVIEWED' ? 'success' : data.status === 'ESCALATED' ? 'warning' : data.status === 'DISMISSED' ? 'danger' : 'neutral'}>
+          {data.status}
+        </Badge>
+      </div>
 
       {data.user && (
         <Alert tone="info" className="mb-5" title="Administrator view">
