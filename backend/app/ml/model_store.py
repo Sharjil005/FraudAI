@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +70,8 @@ class ModelRegistry:
         self._message: ModelBundle | None = None
         self._url_failed = False
         self._message_failed = False
+        self.training_runs = 0
+        self.last_training: str | None = None
 
     # ---- URL model ------------------------------------------------------
     def url_model(self) -> ModelBundle | None:
@@ -315,6 +318,8 @@ class ModelRegistry:
             "url_model": url_bundle.metadata if url_bundle else None,
             "message_model": message_bundle.metadata if message_bundle else None,
             "mode": "hybrid_ml_heuristic" if url_bundle or message_bundle else "heuristic_only",
+            "training_runs": self.training_runs,
+            "last_training": self.last_training,
         }
 
     def feedback_examples(self, db: Session, *, user: User | None = None) -> tuple[list[str], list[int], list[str]]:
@@ -353,6 +358,8 @@ class ModelRegistry:
         url_result: dict[str, Any] = {"retrained": False, "samples": 0, "kind": "URL"}
         message_result: dict[str, Any] = {"retrained": False, "samples": 0, "kind": "MESSAGE"}
 
+        retrained_any = False
+
         if len(url_samples) >= min_examples:
             base_urls, base_url_labels = build_url_dataset()
             combined_urls = base_urls + url_samples
@@ -361,6 +368,9 @@ class ModelRegistry:
             self._url = bundle
             self._url_failed = False
             self._persist_model(URL_MODEL_FILE, bundle)
+            self.training_runs += 1
+            self.last_training = datetime.now(UTC).isoformat()
+            retrained_any = True
             url_result = {
                 "retrained": True,
                 "samples": len(url_samples),
@@ -376,6 +386,9 @@ class ModelRegistry:
             self._message = bundle
             self._message_failed = False
             self._persist_model(MESSAGE_MODEL_FILE, bundle)
+            self.training_runs += 1
+            self.last_training = datetime.now(UTC).isoformat()
+            retrained_any = True
             message_result = {
                 "retrained": True,
                 "samples": len(message_samples),
@@ -384,11 +397,13 @@ class ModelRegistry:
             }
 
         return {
-            "retrained": url_result["retrained"] or message_result["retrained"],
+            "retrained": retrained_any,
             "feedback_examples": len(url_samples) + len(message_samples),
             "url": url_result,
             "message": message_result,
             "source_types": {"url": url_kinds, "message": message_kinds},
+            "training_runs": self.training_runs,
+            "last_training": self.last_training,
         }
 
     def _persist_model(self, filename: str, bundle: ModelBundle) -> None:

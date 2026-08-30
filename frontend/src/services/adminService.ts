@@ -15,4 +15,9 @@ export const adminService = {
     )
     return data
   },
+
+  async retrainModels(): Promise<Record<string, unknown>> {
+    const { data } = await api.post<Record<string, unknown>>('/admin/model/retrain')
+    return data
+  },
 }

@@ -259,6 +259,16 @@ export interface AdminUserRow {
   high_risk_count: number
 }
 
+export interface DriftSummary {
+  feedback_coverage: number
+  feedback_scans: number
+  recent_feedback_scans: number
+  retraining_ready: boolean
+  avg_model_accuracy: number
+  model_drift_risk: 'LOW' | 'MEDIUM' | 'HIGH'
+  needs_attention: boolean
+}
+
 export interface TopIndicator {
   code: string
   label: string
@@ -282,6 +292,7 @@ export interface AdminAnalytics {
   recent_suspicious_scans: ScanListItem[]
   users: AdminUserRow[]
   model_status: Record<string, unknown>
+  drift_summary: DriftSummary
 }
 
 export interface Capabilities {

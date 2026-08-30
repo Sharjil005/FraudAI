@@ -67,6 +67,7 @@ export default function AdminDashboard() {
     [],
   )
   const [togglingId, setTogglingId] = useState<number | null>(null)
+  const [retraining, setRetraining] = useState(false)
   const [suspiciousFilter, setSuspiciousFilter] = useState<'ALL' | RiskLevel>('ALL')
 
   const filteredSuspiciousScans = useMemo(() => {
@@ -131,6 +132,33 @@ export default function AdminDashboard() {
       toast.error(apiErrorMessage(caught, 'The account status could not be changed.'))
     } finally {
       setTogglingId(null)
+    }
+  }
+
+  async function triggerRetrain() {
+    setRetraining(true)
+    try {
+      const result = await adminService.retrainModels()
+      toast.success(
+        result.retrained
+          ? `Retraining completed with ${result.feedback_examples} feedback examples.`
+          : 'Retraining was skipped because there are not enough feedback samples yet.',
+      )
+      if (data) {
+        setData({
+          ...data,
+          model_status: {
+            ...data.model_status,
+            training_runs: Number(result.training_runs ?? data.model_status.training_runs ?? 0),
+            last_training: String(result.last_training ?? data.model_status.last_training ?? 'never'),
+          },
+        })
+      }
+      await reload()
+    } catch (caught) {
+      toast.error(apiErrorMessage(caught, 'The retraining job could not be started.'))
+    } finally {
+      setRetraining(false)
     }
   }
 
@@ -331,6 +359,34 @@ export default function AdminDashboard() {
         />
       </Card>
 
+      {data?.drift_summary && (
+        <Card className="mt-5">
+          <CardHeader
+            title="AI governance snapshot"
+            subtitle="Model drift, feedback coverage and retraining readiness"
+            icon={<Brain className="h-4 w-4" aria-hidden />}
+          />
+          <CardBody className="grid gap-4 pt-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl border border-hairline bg-abyss/40 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">Feedback coverage</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{data.drift_summary.feedback_coverage.toFixed(1)}%</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-abyss/40 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">Retaining ready</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{data.drift_summary.retraining_ready ? 'Yes' : 'No'}</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-abyss/40 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">Average accuracy</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{data.drift_summary.avg_model_accuracy.toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl border border-hairline bg-abyss/40 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">Drift risk</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{data.drift_summary.model_drift_risk}</p>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Model status */}
       {modelEntries.length > 0 && (
         <Card className="mt-5">
@@ -338,6 +394,12 @@ export default function AdminDashboard() {
             title="Detection engine status"
             subtitle="Live state of the models backing each scan type"
             icon={<Brain className="h-4 w-4" aria-hidden />}
+            action={
+              <Button variant="secondary" size="sm" onClick={triggerRetrain} disabled={retraining || loading}>
+                <RefreshCw className={retraining ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} aria-hidden />
+                {retraining ? 'Retraining…' : 'Retrain now'}
+              </Button>
+            }
           />
           <CardBody className="grid gap-4 pt-5 md:grid-cols-2 xl:grid-cols-3">
             {modelEntries.map(([name, status]) => (

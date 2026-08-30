@@ -311,6 +311,16 @@ def test_admin_analytics_aggregates_platform_data(admin_client: TestClient) -> N
     assert body["model_status"]
     assert body["drift_summary"]["feedback_coverage"] >= 0
     assert "retraining_ready" in body["drift_summary"]
+    assert body["model_status"]["training_runs"] >= 0
+
+
+def test_admin_retraining_endpoint_reports_training_state(admin_client: TestClient) -> None:
+    response = admin_client.post("/api/admin/model/retrain")
+    assert response.status_code == 200
+    body = response.json()
+    assert "retrained" in body
+    assert "feedback_examples" in body
+    assert body["feedback_examples"] >= 0
 
 
 def test_pdf_report_downloads(auth_client: TestClient) -> None:
