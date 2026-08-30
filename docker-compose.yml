@@ -1,0 +1,77 @@
+# FraudShield AI — full stack: PostgreSQL + FastAPI + React (nginx).
+#
+#   docker compose up --build
+#
+# Then open http://localhost:3000 and sign in with the demo credentials from
+# .env.example. The API is proxied at http://localhost:3000/api and also
+# exposed directly on http://localhost:8000 (Swagger UI at /docs).
+
+name: fraudshield
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: fraudshield-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fraudshield}
+      POSTGRES_USER: ${POSTGRES_USER:-fraudshield}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fraudshield}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fraudshield} -d ${POSTGRES_DB:-fraudshield}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    # Not published to the host by default — only the API needs to reach it.
+    expose:
+      - "5432"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fraudshield-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: >-
+        postgresql+psycopg://${POSTGRES_USER:-fraudshield}:${POSTGRES_PASSWORD:-fraudshield}@db:5432/${POSTGRES_DB:-fraudshield}
+      # Override in a .env file beside this compose file for anything public.
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-please-use-a-long-random-string}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@fraudshield.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+      DEMO_EMAIL: ${DEMO_EMAIL:-demo@fraudshield.local}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-Demo@12345}
+      CREATE_BOOTSTRAP_USERS: ${CREATE_BOOTSTRAP_USERS:-True}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      ENVIRONMENT: production
+      DEBUG: "False"
+    volumes:
+      # Persist uploaded documents and trained model artefacts across restarts.
+      - uploads_data:/app/uploads
+      - model_data:/app/app/ml/artifacts
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fraudshield-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "${WEB_PORT:-3000}:80"
+
+volumes:
+  postgres_data:
+  uploads_data:
+  model_data:

@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(pip --version)",
+      "Bash(python -m venv .venv)",
+      "Bash(./.venv/Scripts/python.exe -m pip install --upgrade pip -q)",
+      "Bash(./.venv/Scripts/python.exe -m pip install -r requirements.txt)",
+      "Bash(./.venv/Scripts/python.exe -c ' *)",
+      "Bash(npm install *)",
+      "Bash(python -c ' *)",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(.venv/Scripts/python.exe seed.py --reset)",
+      "Bash(.venv/Scripts/python.exe -m pytest)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_auth_api.py::test_register_returns_a_token_and_user tests/test_message_detector.py::test_scam_categories_are_reported tests/test_risk_engine.py::test_multi_module_fusion_is_weighted \"tests/test_risk_engine.py::test_scores_are_clamped_and_rounded[55.555-55.56]\" tests/test_scan_api.py::test_history_lists_and_filters_scans)",
+      "Bash(.venv/Scripts/python.exe -)",
+      "Bash(npm -v)",
+      "Bash(node -e \"const p=require\\('./node_modules/tailwindcss/package.json'\\);console.log\\('tailwind',p.version\\);const v=require\\('./node_modules/vite/package.json'\\);console.log\\('vite',v.version\\);const r=require\\('./node_modules/recharts/package.json'\\);console.log\\('recharts',r.version\\)\")",
+      "Bash(npm run *)",
+      "Bash(python -)",
+      "Bash(./.venv/Scripts/python.exe -m pytest -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest -q -p no:warnings)",
+      "Bash(./.venv/Scripts/python.exe -m pytest -p no:warnings --no-header -rN)",
+      "Bash(curl -s http://127.0.0.1:8000/api/health)",
+      "Read(//tmp/**)",
+      "Bash(./.venv/Scripts/python.exe scripts/smoke_api.py)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"demo@fraudshield.local\",\"password\":\"Demo@12345\"}')",
+      "Bash(cd \"C:/Users/sharj/OneDrive/Desktop/FraudShield/backend\" && cat app/core/config.py && echo \"=== vite config ===\" && cat ../frontend/vite.config.ts && echo \"=== api client ===\" && cat ../frontend/src/services/apiClient.ts 2>/dev/null | head -40)",
+      "Bash(DATABASE_URL=postgresql+psycopg://fraudshield:fraudshield@127.0.0.1:5999/fraudshield CREATE_BOOTSTRAP_USERS=False TRAIN_MODELS_ON_STARTUP=False ./.venv/Scripts/python.exe -c ' *)",
+      "Bash(./.venv/Scripts/python.exe -m pip install --quiet \"psycopg[binary]>=3.2\")",
+      "Bash(./backend/.venv/Scripts/python.exe -c ' *)"
+    ]
+  }
+}

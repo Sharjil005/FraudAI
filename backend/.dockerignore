@@ -1,0 +1,17 @@
+# Keep the build context small and never ship local state into the image.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.*
+*.db
+*.sqlite3
+uploads/
+app/ml/artifacts/
+Dockerfile
+.dockerignore

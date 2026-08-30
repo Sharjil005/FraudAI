@@ -1,0 +1,254 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------------- */
+/* FraudShield AI design tokens — dark cybersecurity SaaS aesthetic          */
+/* ------------------------------------------------------------------------- */
+
+@theme {
+  --color-void: #04060c;
+  --color-abyss: #070a13;
+  --color-surface: #0b1020;
+  --color-surface-2: #101731;
+  --color-surface-3: #161f3d;
+  --color-hairline: #1e2a4d;
+
+  --color-ink: #eaf0ff;
+  --color-ink-muted: #9aa7c7;
+  --color-ink-faint: #6b7899;
+
+  --color-cyan-glow: #22d3ee;
+  --color-violet-glow: #7c6cf6;
+  --color-brand: #22d3ee;
+  --color-brand-2: #6366f1;
+
+  --color-risk-low: #22c55e;
+  --color-risk-medium: #f59e0b;
+  --color-risk-high: #f97316;
+  --color-risk-critical: #ef4444;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+
+  --radius-xl2: 1.25rem;
+
+  --shadow-glow: 0 0 0 1px rgb(34 211 238 / 0.18), 0 18px 50px -18px rgb(34 211 238 / 0.35);
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 24px 60px -32px rgb(0 0 0 / 0.9);
+
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-scan: scan 2.4s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.6s ease-out infinite;
+  --animate-marquee: marquee 28s linear infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(1000%);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Base                                                                      */
+/* ------------------------------------------------------------------------- */
+
+@layer base {
+  * {
+    border-color: var(--color-hairline);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-void);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-cyan-glow) 35%, transparent);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-cyan-glow);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-surface-3) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-3);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #24325e;
+    background-clip: content-box;
+  }
+
+  input[type='file'] {
+    color: var(--color-ink-muted);
+  }
+
+  /* Recharts tooltip/axis defaults so charts inherit the dark theme */
+  .recharts-cartesian-axis-tick text {
+    fill: var(--color-ink-faint);
+    font-size: 11px;
+  }
+
+  .recharts-default-tooltip {
+    background: var(--color-surface-2) !important;
+    border: 1px solid var(--color-hairline) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.8);
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Reusable composites                                                       */
+/* ------------------------------------------------------------------------- */
+
+@utility grid-noise {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+@utility text-gradient {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-cyan-glow) 0%,
+    #a5b4fc 45%,
+    var(--color-violet-glow) 100%
+  );
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility glass {
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.045) 0%,
+    rgb(255 255 255 / 0.015) 100%
+  );
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+@utility skeleton-shine {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.07) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

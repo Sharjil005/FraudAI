@@ -1,0 +1,27 @@
+"""Structured-ish logging configuration for the API."""
+
+from __future__ import annotations
+
+import logging
+import sys
+
+_CONFIGURED = False
+_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+
+
+def configure_logging(level: int = logging.INFO) -> None:
+    global _CONFIGURED
+    if _CONFIGURED:
+        return
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter(_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
+    root = logging.getLogger()
+    root.setLevel(level)
+    root.handlers = [handler]
+    logging.getLogger("passlib").setLevel(logging.ERROR)
+    _CONFIGURED = True
+
+
+def get_logger(name: str) -> logging.Logger:
+    configure_logging()
+    return logging.getLogger(name)

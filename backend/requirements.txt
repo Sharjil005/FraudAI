@@ -1,0 +1,37 @@
+# ---- FraudShield AI :: Backend dependencies ----------------------------------
+# Core web framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+
+# Data validation / settings
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+email-validator>=2.2.0
+
+# Database
+SQLAlchemy>=2.0.35
+# PostgreSQL driver. Ships prebuilt wheels on every major platform, so it needs
+# no compiler. SQLite remains the automatic fallback when no server answers.
+psycopg[binary]>=3.2.3
+
+# Auth
+PyJWT>=2.9.0
+bcrypt>=4.2.0
+
+# ML / analysis
+numpy>=2.1.0
+scikit-learn>=1.5.2
+joblib>=1.4.2
+
+# Documents
+pypdf>=5.0.0
+Pillow>=10.4.0
+fpdf2>=2.7.9
+
+# Optional OCR (application degrades gracefully when absent)
+pytesseract>=0.3.13
+
+# Tooling
+httpx>=0.27.0
+pytest>=8.3.0
