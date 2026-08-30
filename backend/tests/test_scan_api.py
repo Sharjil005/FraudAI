@@ -170,6 +170,46 @@ def test_scan_status_can_be_updated_for_triage(auth_client: TestClient) -> None:
     assert response.json()["status"] == "REVIEWED"
 
 
+def test_case_notes_and_escalation_reason_are_saved(auth_client: TestClient) -> None:
+    scan_id = auth_client.post("/api/scan/url", json={"url": DEMO_URL}).json()["scan"]["scan_id"]
+
+    response = auth_client.patch(
+        f"/api/scans/{scan_id}/status",
+        json={
+            "status": "ESCALATED",
+            "reviewer_name": "Analyst A",
+            "analyst_notes": "Manual review required because the domain impersonates a bank.",
+            "escalation_reason": "Brand impersonation",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "ESCALATED"
+    assert body["reviewer_name"] == "Analyst A"
+    assert body["analyst_notes"] == "Manual review required because the domain impersonates a bank."
+    assert body["escalation_reason"] == "Brand impersonation"
+
+
+def test_case_assignment_and_status_history_are_recorded(auth_client: TestClient) -> None:
+    scan_id = auth_client.post("/api/scan/url", json={"url": DEMO_URL}).json()["scan"]["scan_id"]
+
+    response = auth_client.patch(
+        f"/api/scans/{scan_id}/status",
+        json={
+            "status": "REVIEWED",
+            "assigned_to": "Analyst B",
+            "reviewer_name": "Analyst B",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["assigned_to"] == "Analyst B"
+    assert body["status_history"][-1]["status"] == "REVIEWED"
+    assert body["status_history"][-1]["reviewer_name"] == "Analyst B"
+
+
 def test_missing_scan_returns_404(auth_client: TestClient) -> None:
     assert auth_client.get("/api/scans/999999").status_code == 404
 

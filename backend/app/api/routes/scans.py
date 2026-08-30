@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -84,7 +85,28 @@ def update_scan_status(
             detail="You do not have access to this scan.",
         )
 
+    if payload.reviewer_name is not None:
+        scan.reviewer_name = payload.reviewer_name.strip()
+    if payload.assigned_to is not None:
+        scan.assigned_to = payload.assigned_to.strip()
+    if payload.analyst_notes is not None:
+        scan.analyst_notes = payload.analyst_notes.strip()
+    if payload.escalation_reason is not None:
+        scan.escalation_reason = payload.escalation_reason.strip()
+
     scan.status = payload.status
+    history = list(scan.status_history or [])
+    history.append(
+        {
+            "status": payload.status.value,
+            "reviewer_name": scan.reviewer_name,
+            "assigned_to": scan.assigned_to,
+            "analyst_notes": scan.analyst_notes,
+            "escalation_reason": scan.escalation_reason,
+            "changed_at": datetime.now(UTC).isoformat(),
+        }
+    )
+    scan.status_history = history
     db.commit()
     db.refresh(scan)
     return scan_to_detail(scan, include_user=current_user.role == UserRole.ADMIN)

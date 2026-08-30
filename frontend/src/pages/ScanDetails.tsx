@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -15,6 +15,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Alert } from '@/components/ui/Alert'
+import { Input } from '@/components/ui/Input'
 import { LoadingPanel } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/PageHeader'
@@ -36,6 +37,10 @@ export default function ScanDetails() {
   const [downloading, setDownloading] = useState<'pdf' | 'html' | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [statusSaving, setStatusSaving] = useState(false)
+  const [reviewerName, setReviewerName] = useState('')
+  const [assignedTo, setAssignedTo] = useState('')
+  const [analystNotes, setAnalystNotes] = useState('')
+  const [escalationReason, setEscalationReason] = useState('')
 
   const { data, loading, error } = useAsync<ScanDetail>(
     () => scanService.detail(scanId ?? ''),
@@ -59,8 +64,22 @@ export default function ScanDetails() {
     if (!data) return
     setStatusSaving(true)
     try {
-      const updated = await scanService.updateStatus(data.scan_id, status)
+      const updated = await scanService.updateStatus(data.scan_id, status, {
+        reviewer_name: reviewerName.trim(),
+        assigned_to: assignedTo.trim(),
+        analyst_notes: analystNotes.trim(),
+        escalation_reason: escalationReason.trim(),
+      })
       data.status = updated.status
+      data.reviewer_name = updated.reviewer_name ?? ''
+      data.assigned_to = updated.assigned_to ?? ''
+      data.analyst_notes = updated.analyst_notes ?? ''
+      data.escalation_reason = updated.escalation_reason ?? ''
+      data.status_history = updated.status_history ?? data.status_history
+      setReviewerName(updated.reviewer_name ?? '')
+      setAssignedTo(updated.assigned_to ?? '')
+      setAnalystNotes(updated.analyst_notes ?? '')
+      setEscalationReason(updated.escalation_reason ?? '')
       toast.success(`Scan marked as ${status.toLowerCase().replace('_', ' ')}.`)
     } catch (caught) {
       toast.error(apiErrorMessage(caught, 'The triage status could not be updated.'))
@@ -86,6 +105,14 @@ export default function ScanDetails() {
       setDeleting(false)
     }
   }
+
+  useEffect(() => {
+    if (!data) return
+    setReviewerName(data.reviewer_name ?? '')
+    setAssignedTo(data.assigned_to ?? '')
+    setAnalystNotes(data.analyst_notes ?? '')
+    setEscalationReason(data.escalation_reason ?? '')
+  }, [data])
 
   if (loading) {
     return (
@@ -190,6 +217,103 @@ export default function ScanDetails() {
           {data.status}
         </Badge>
       </div>
+
+      <Card className="mb-5">
+        <CardHeader
+          title="Analyst case notes"
+          subtitle="Capture the investigator decision for this scan"
+          icon={<FileText className="h-4 w-4" aria-hidden />}
+        />
+        <CardBody className="space-y-4 pt-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label="Reviewer name"
+              value={reviewerName}
+              onChange={(event) => setReviewerName(event.target.value)}
+              placeholder="Analyst name"
+            />
+            <Input
+              label="Assigned analyst"
+              value={assignedTo}
+              onChange={(event) => setAssignedTo(event.target.value)}
+              placeholder="Analyst B"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium tracking-wide text-ink-muted">
+              Escalation reason
+            </label>
+            <select
+              value={escalationReason}
+              onChange={(event) => setEscalationReason(event.target.value)}
+              className="h-11 w-full rounded-xl border border-hairline bg-abyss/80 px-3.5 text-sm text-ink outline-none transition-colors focus:border-cyan-400/60 focus:ring-4 focus:ring-cyan-400/10"
+            >
+              <option value="">No escalation reason</option>
+              <option value="Brand impersonation">Brand impersonation</option>
+              <option value="Credential harvesting">Credential harvesting</option>
+              <option value="Urgent account takeover risk">Urgent account takeover risk</option>
+              <option value="Manual confirmation required">Manual confirmation required</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium tracking-wide text-ink-muted">
+              Analyst notes
+            </label>
+            <textarea
+              value={analystNotes}
+              onChange={(event) => setAnalystNotes(event.target.value)}
+              rows={5}
+              placeholder="Document why this case was reviewed or escalated."
+              className="w-full rounded-xl border border-hairline bg-abyss/80 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint/70 outline-none transition-colors focus:border-cyan-400/60 focus:ring-4 focus:ring-cyan-400/10"
+            />
+          </div>
+
+          {data.status_history?.length ? (
+            <div>
+              <label className="mb-2 block text-xs font-medium tracking-wide text-ink-muted">
+                Case timeline
+              </label>
+              <div className="space-y-2">
+                {data.status_history.slice().reverse().map((entry, index) => (
+                  <div key={`${entry.changed_at ?? index}-${index}`} className="rounded-xl border border-hairline bg-surface-2/50 px-3 py-2 text-sm text-ink-muted">
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                      <span>{entry.status}</span>
+                      {entry.assigned_to ? <span>• {entry.assigned_to}</span> : null}
+                    </div>
+                    <div className="mt-1">
+                      {entry.reviewer_name ? `Reviewer: ${entry.reviewer_name}` : 'Reviewer: unassigned'}
+                    </div>
+                    {entry.escalation_reason ? (
+                      <div className="mt-1 text-ink">Escalation: {entry.escalation_reason}</div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleTriage('REVIEWED')}
+              loading={statusSaving}
+            >
+              Save reviewed state
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleTriage('ESCALATED')}
+              loading={statusSaving}
+            >
+              Save escalation
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
 
       {data.user && (
         <Alert tone="info" className="mb-5" title="Administrator view">

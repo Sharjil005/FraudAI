@@ -86,6 +86,10 @@ class ScanEnvelope(BaseModel):
 
 class ScanStatusUpdateRequest(BaseModel):
     status: ScanStatus
+    reviewer_name: str | None = None
+    assigned_to: str | None = None
+    analyst_notes: str | None = None
+    escalation_reason: str | None = None
 
 
 # --- Modality results ---------------------------------------------------------
@@ -151,6 +155,11 @@ class ScanListItem(BaseModel):
     scan_id: int
     scan_type: ScanType
     status: ScanStatus
+    reviewer_name: str = ""
+    assigned_to: str = ""
+    analyst_notes: str = ""
+    escalation_reason: str = ""
+    status_history: list[dict[str, Any]] = Field(default_factory=list)
     created_at: datetime
     target_label: str
     prediction: str
@@ -168,6 +177,11 @@ class ScanDetail(BaseModel):
     scan_id: int
     scan_type: ScanType
     status: ScanStatus
+    reviewer_name: str = ""
+    assigned_to: str = ""
+    analyst_notes: str = ""
+    escalation_reason: str = ""
+    status_history: list[dict[str, Any]] = Field(default_factory=list)
     created_at: datetime
     target_label: str
     prediction: str

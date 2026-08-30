@@ -55,6 +55,11 @@ class Scan(Base):
         nullable=False,
     )
     target_label: Mapped[str] = mapped_column(String(512), default="", nullable=False)
+    reviewer_name: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    assigned_to: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    analyst_notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    escalation_reason: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    status_history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True, nullable=False
     )

@@ -55,8 +55,20 @@ export const scanService = {
     return data
   },
 
-  async updateStatus(scanId: number, status: ScanDetail['status']): Promise<ScanDetail> {
-    const { data } = await api.patch<ScanDetail>(`/scans/${scanId}/status`, { status })
+  async updateStatus(
+    scanId: number,
+    status: ScanDetail['status'],
+    metadata?: {
+      reviewer_name?: string
+      assigned_to?: string
+      analyst_notes?: string
+      escalation_reason?: string
+    },
+  ): Promise<ScanDetail> {
+    const { data } = await api.patch<ScanDetail>(`/scans/${scanId}/status`, {
+      status,
+      ...metadata,
+    })
     return data
   },
 

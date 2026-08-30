@@ -49,10 +49,24 @@ export interface RiskAssessment {
   module_scores?: Record<string, number>
 }
 
+export interface StatusHistoryEntry {
+  status: string
+  reviewer_name?: string
+  assigned_to?: string
+  analyst_notes?: string
+  escalation_reason?: string
+  changed_at?: string
+}
+
 export interface ScanEnvelope {
   scan_id: number
   scan_type: ScanType
   status: ScanStatus
+  reviewer_name?: string
+  assigned_to?: string
+  analyst_notes?: string
+  escalation_reason?: string
+  status_history?: StatusHistoryEntry[]
   created_at: string
   target_label: string
 }
@@ -99,6 +113,11 @@ export interface ScanListItem {
   scan_id: number
   scan_type: ScanType
   status: ScanStatus
+  reviewer_name?: string
+  assigned_to?: string
+  analyst_notes?: string
+  escalation_reason?: string
+  status_history?: StatusHistoryEntry[]
   created_at: string
   target_label: string
   prediction: string
@@ -123,6 +142,11 @@ export interface ScanDetail {
   scan_id: number
   scan_type: ScanType
   status: ScanStatus
+  reviewer_name?: string
+  assigned_to?: string
+  analyst_notes?: string
+  escalation_reason?: string
+  status_history?: StatusHistoryEntry[]
   created_at: string
   target_label: string
   prediction: string
