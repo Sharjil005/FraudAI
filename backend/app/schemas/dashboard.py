@@ -53,6 +53,7 @@ class DashboardSummary(BaseModel):
     risk_distribution: list[RiskDistributionItem]
     scan_type_distribution: list[ScanTypeCount]
     trend: list[ScanTrendPoint]
+    top_indicators: list[dict[str, object]]
     recent_scans: list[ScanListItem]
 
 

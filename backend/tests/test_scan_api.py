@@ -191,6 +191,7 @@ def test_dashboard_summary_reflects_scans(auth_client: TestClient) -> None:
     assert len(body["risk_distribution"]) == 4
     assert len(body["trend"]) == 14
     assert body["recent_scans"]
+    assert body["top_indicators"]
 
 
 def test_dashboard_summary_is_empty_for_a_new_account(auth_client: TestClient) -> None:

@@ -152,16 +152,21 @@ def dashboard_summary(db: Session, user: User) -> dict[str, Any]:
             for scan_type in ScanType
         ],
         "trend": trend_series(db, user=user, days=14),
+        "top_indicators": _top_indicators(db, user=user, limit=6),
         "recent_scans": [scan_to_list_item(scan) for scan in recent_scans(db, user=user, limit=6)],
     }
 
 
-def _top_indicators(db: Session, limit: int = 8) -> list[dict[str, Any]]:
-    """Most frequently triggered indicator codes across all scans."""
+def _top_indicators(db: Session, user: User | None = None, limit: int = 8) -> list[dict[str, Any]]:
+    """Most frequently triggered indicator codes across relevant scans."""
     counter: Counter[str] = Counter()
     labels: dict[str, str] = {}
 
-    for scan in db.execute(select(Scan).order_by(Scan.id.desc()).limit(500)).scalars().unique():
+    statement = select(Scan).order_by(Scan.id.desc()).limit(500)
+    if user is not None:
+        statement = statement.where(Scan.user_id == user.id)
+
+    for scan in db.execute(statement).scalars().unique():
         detail = scan.detail
         if detail is None:
             continue

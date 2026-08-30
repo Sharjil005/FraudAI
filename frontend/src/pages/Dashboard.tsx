@@ -117,6 +117,12 @@ export default function Dashboard() {
           : 'Both recent scans are at the same risk score.'
       : 'Select two recent scans to compare risk delta and detection type.'
 
+  const threatAlerts = (data?.recent_scans ?? [])
+    .filter((scan) => scan.risk_level === 'HIGH' || scan.risk_level === 'CRITICAL')
+    .slice(0, 3)
+
+  const topIndicators = data?.top_indicators ?? []
+
   useEffect(() => {
     let active = true
 
@@ -361,6 +367,83 @@ export default function Dashboard() {
             <p className="mt-5 rounded-xl border border-hairline bg-surface-2/60 p-3 text-[13px] text-ink-muted">
               {comparisonSummary}
             </p>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card className="mt-5 border-orange-500/20 bg-orange-500/5">
+        <CardHeader
+          title="Threat watchlist"
+          subtitle="Highest-risk recent activity that needs attention"
+          icon={<AlertTriangle className="h-4 w-4" aria-hidden />}
+        />
+        <CardBody className="pt-5">
+          {threatAlerts.length === 0 ? (
+            <p className="text-[13px] text-ink-muted">
+              No recent scans are in the HIGH or CRITICAL band. The current risk posture looks stable.
+            </p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-3">
+              {threatAlerts.map((scan) => (
+                <div key={scan.scan_id} className="rounded-xl border border-orange-500/20 bg-surface-2/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+                      #{scan.scan_id}
+                    </p>
+                    <span className="rounded-full border border-orange-500/25 bg-orange-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-orange-200">
+                      {scan.risk_level}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[15px] font-semibold text-ink">{scan.scan_type}</p>
+                  <p className="mt-1 truncate text-[12px] text-ink-muted">{scan.target_label}</p>
+                  <div className="mt-3 flex items-end justify-between gap-3">
+                    <p className="text-2xl font-semibold tabular-nums text-ink">{scan.risk_score}</p>
+                    <span className="text-[11px] text-ink-faint">Risk</span>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-abyss">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-orange-400 to-red-500"
+                      style={{ width: `${Math.min(scan.risk_score, 100)}%` }}
+                    />
+                  </div>
+                  <p className="mt-3 text-[11px] leading-relaxed text-ink-muted">
+                    Recommended action: review this result, verify the target, and escalate if the content is being used in a live workflow.
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card className="mt-5 border-cyan-500/20 bg-cyan-500/5">
+        <CardHeader
+          title="Top signal indicators"
+          subtitle="The fraud patterns showing up most often in your recent scans"
+          icon={<TrendingUp className="h-4 w-4" aria-hidden />}
+        />
+        <CardBody className="pt-5">
+          {topIndicators.length === 0 ? (
+            <p className="text-[13px] text-ink-muted">
+              Indicator trends will appear as soon as you run more scans.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {topIndicators.map((indicator, index) => (
+                <div key={`${indicator.code}-${index}`} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3 text-[12px]">
+                    <span className="font-medium text-ink">{indicator.label}</span>
+                    <span className="text-ink-faint">{indicator.count} hits</span>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-abyss">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500"
+                      style={{ width: `${Math.min((indicator.count / Math.max(topIndicators[0]?.count ?? 1, 1)) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardBody>
       </Card>

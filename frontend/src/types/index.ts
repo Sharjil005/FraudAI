@@ -182,6 +182,7 @@ export interface DashboardSummary {
   risk_distribution: RiskDistributionItem[]
   scan_type_distribution: ScanTypeCount[]
   trend: ScanTrendPoint[]
+  top_indicators: TopIndicator[]
   recent_scans: ScanListItem[]
 }
 
