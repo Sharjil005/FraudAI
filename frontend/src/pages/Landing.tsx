@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -23,6 +23,7 @@ import { RiskScale } from '@/components/RiskMeter'
 import { cn } from '@/lib/cn'
 import { RISK_BANDS, RISK_LEVELS, riskTheme } from '@/lib/risk'
 import { useAuth } from '@/hooks/useAuth'
+import { api } from '@/services/api'
 
 const CAPABILITIES = [
   {
@@ -124,6 +125,13 @@ const SAMPLE_INDICATORS = [
   { label: 'Account identifier passed in query string', weight: 12, severity: 'medium' },
 ]
 
+type CapabilityStatus = {
+  online: boolean
+  modelCount: number
+  ocrAvailable: boolean
+  fallbackText: string
+}
+
 export default function Landing() {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
@@ -131,6 +139,45 @@ export default function Landing() {
     'http://secure-login-verify-account.example.com/login?account=12345',
   )
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [capabilityStatus, setCapabilityStatus] = useState<CapabilityStatus>({
+    online: false,
+    modelCount: 0,
+    ocrAvailable: false,
+    fallbackText: 'Checking system status…',
+  })
+
+  useEffect(() => {
+    let active = true
+
+    api
+      .get('/scan/capabilities')
+      .then(({ data }) => {
+        if (!active) return
+
+        const modelEntries = data?.models ?? {}
+        setCapabilityStatus({
+          online: true,
+          modelCount: Object.keys(modelEntries).length,
+          ocrAvailable: Boolean(data?.ocr?.available),
+          fallbackText:
+            data?.ocr?.fallback ??
+            (data?.ocr?.available ? 'Tesseract OCR is available' : 'OCR is unavailable'),
+        })
+      })
+      .catch(() => {
+        if (!active) return
+        setCapabilityStatus({
+          online: false,
+          modelCount: 0,
+          ocrAvailable: false,
+          fallbackText: 'Backend unavailable — start the API server to enable live scans.',
+        })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   function handleDemo(event: FormEvent) {
     event.preventDefault()
@@ -189,6 +236,31 @@ export default function Landing() {
               >
                 See how scoring works
               </a>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium',
+                  capabilityStatus.online
+                    ? 'border-emerald-400/25 bg-emerald-500/10 text-emerald-200'
+                    : 'border-amber-400/25 bg-amber-500/10 text-amber-200',
+                )}
+              >
+                <span
+                  className={cn(
+                    'h-2 w-2 rounded-full',
+                    capabilityStatus.online ? 'bg-emerald-400' : 'bg-amber-400',
+                  )}
+                  aria-hidden
+                />
+                {capabilityStatus.online ? 'Live backend connected' : 'API status check pending'}
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-hairline bg-surface-2/70 px-3 py-1.5 text-[11px] font-medium text-ink-faint">
+                {capabilityStatus.modelCount > 0
+                  ? `${capabilityStatus.modelCount} model engines active`
+                  : 'Model status loading'}
+              </div>
             </div>
 
             <dl className="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-hairline/60 pt-6">
@@ -304,6 +376,26 @@ export default function Landing() {
                     </li>
                   ))}
                 </ul>
+
+                <div className="mt-4 rounded-lg border border-hairline bg-surface-2/50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+                      Engine state
+                    </p>
+                    <span
+                      className={cn(
+                        'h-2.5 w-2.5 rounded-full',
+                        capabilityStatus.online ? 'bg-emerald-400' : 'bg-amber-400',
+                      )}
+                      aria-hidden
+                    />
+                  </div>
+                  <p className="mt-2 text-[12px] text-ink">
+                    {capabilityStatus.online
+                      ? `OCR ${capabilityStatus.ocrAvailable ? 'ready' : 'fallback mode'} · ${capabilityStatus.fallbackText}`
+                      : capabilityStatus.fallbackText}
+                  </p>
+                </div>
 
                 <p className="mt-4 text-[11px] leading-relaxed text-ink-faint">
                   Illustrative output. Sign in to run this exact URL through the live engine.
