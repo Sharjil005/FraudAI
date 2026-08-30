@@ -10,6 +10,7 @@ import {
   Menu,
   MessageSquare,
   Shield,
+  ShieldAlert,
   X,
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
@@ -41,7 +42,10 @@ const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
   },
   {
     heading: 'Records',
-    items: [{ to: '/dashboard/history', label: 'Scan History', icon: History }],
+    items: [
+      { to: '/dashboard/history', label: 'Scan History', icon: History },
+      { to: '/dashboard/review', label: 'Review Queue', icon: ShieldAlert },
+    ],
   },
   {
     heading: 'Administration',

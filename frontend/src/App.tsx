@@ -11,6 +11,7 @@ import MessageScanner from '@/pages/MessageScanner'
 import DocumentScanner from '@/pages/DocumentScanner'
 import ScanHistory from '@/pages/ScanHistory'
 import ScanDetails from '@/pages/ScanDetails'
+import ReviewQueue from '@/pages/ReviewQueue'
 import AdminDashboard from '@/pages/AdminDashboard'
 import NotFound from '@/pages/NotFound'
 
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="scan/message" element={<MessageScanner />} />
           <Route path="scan/document" element={<DocumentScanner />} />
           <Route path="history" element={<ScanHistory />} />
+          <Route path="review" element={<ReviewQueue />} />
           <Route path="scans/:scanId" element={<ScanDetails />} />
 
           {/* Admin-only */}
