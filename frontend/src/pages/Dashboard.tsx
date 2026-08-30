@@ -94,6 +94,28 @@ export default function Dashboard() {
     ocrAvailable: false,
     fallbackText: 'Checking engine status…',
   })
+  const [compareA, setCompareA] = useState<number | ''>('')
+  const [compareB, setCompareB] = useState<number | ''>('')
+
+  const comparisonScans = data?.recent_scans ?? []
+
+  const selectedComparison = comparisonScans.filter((scan) =>
+    scan.scan_id === compareA || scan.scan_id === compareB,
+  )
+
+  const comparisonDelta =
+    selectedComparison.length === 2
+      ? selectedComparison[0].risk_score - selectedComparison[1].risk_score
+      : 0
+
+  const comparisonSummary =
+    selectedComparison.length === 2
+      ? comparisonDelta > 0
+        ? `Scan #${selectedComparison[0].scan_id} is ${comparisonDelta} points higher than #${selectedComparison[1].scan_id}.`
+        : comparisonDelta < 0
+          ? `Scan #${selectedComparison[1].scan_id} is ${Math.abs(comparisonDelta)} points higher than #${selectedComparison[0].scan_id}.`
+          : 'Both recent scans are at the same risk score.'
+      : 'Select two recent scans to compare risk delta and detection type.'
 
   useEffect(() => {
     let active = true
@@ -126,6 +148,14 @@ export default function Dashboard() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!comparisonScans.length) return
+    if (compareA === '' && compareB === '') {
+      setCompareA(comparisonScans[0]?.scan_id ?? '')
+      setCompareB(comparisonScans[1]?.scan_id ?? comparisonScans[0]?.scan_id ?? '')
+    }
+  }, [comparisonScans, compareA, compareB])
 
   const firstName = (user?.name ?? '').split(' ')[0] || 'there'
 
@@ -234,6 +264,106 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
+
+      <Card className="mt-5">
+        <CardHeader
+          title="Recent scan comparison"
+          subtitle="Compare two recent analyses to see how risk changed over time"
+          icon={<TrendingUp className="h-4 w-4" aria-hidden />}
+        />
+        <CardBody className="pt-5">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                Compare scan A
+              </label>
+              <select
+                value={compareA}
+                onChange={(event) => setCompareA(event.target.value ? Number(event.target.value) : '')}
+                className="w-full rounded-xl border border-hairline bg-abyss/80 px-3 py-2.5 text-[13px] text-ink outline-none focus:border-cyan-400/60"
+              >
+                {comparisonScans.map((scan) => (
+                  <option key={scan.scan_id} value={scan.scan_id}>
+                    #{scan.scan_id} · {scan.scan_type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                Compare scan B
+              </label>
+              <select
+                value={compareB}
+                onChange={(event) => setCompareB(event.target.value ? Number(event.target.value) : '')}
+                className="w-full rounded-xl border border-hairline bg-abyss/80 px-3 py-2.5 text-[13px] text-ink outline-none focus:border-cyan-400/60"
+              >
+                {comparisonScans.map((scan) => (
+                  <option key={scan.scan_id} value={scan.scan_id}>
+                    #{scan.scan_id} · {scan.scan_type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <div className="w-full rounded-xl border border-hairline bg-surface-2/70 px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                  Difference
+                </p>
+                <p className="mt-1 text-lg font-semibold text-ink">
+                  {selectedComparison.length === 2 ? `${Math.abs(comparisonDelta)} pts` : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {selectedComparison.length === 2 ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {selectedComparison.map((scan) => (
+                <div key={scan.scan_id} className="rounded-xl border border-hairline bg-surface-2/60 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                        Scan #{scan.scan_id}
+                      </p>
+                      <p className="mt-1 text-[15px] font-semibold text-ink">{scan.scan_type}</p>
+                    </div>
+                    <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200">
+                      {scan.risk_level}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] text-ink-faint">Risk score</p>
+                      <p className="text-3xl font-semibold tabular-nums text-ink">{scan.risk_score}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] text-ink-faint">Date</p>
+                      <p className="text-[12px] text-ink-muted">{formatDateTime(scan.created_at)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-abyss">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500"
+                      style={{ width: `${Math.min(scan.risk_score, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 rounded-xl border border-dashed border-hairline bg-surface-2/50 p-4 text-[13px] text-ink-faint">
+              {comparisonSummary}
+            </p>
+          )}
+
+          {selectedComparison.length === 2 && (
+            <p className="mt-5 rounded-xl border border-hairline bg-surface-2/60 p-3 text-[13px] text-ink-muted">
+              {comparisonSummary}
+            </p>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Charts */}
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.6fr_1fr]">
