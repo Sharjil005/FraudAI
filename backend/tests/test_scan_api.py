@@ -210,6 +210,28 @@ def test_case_assignment_and_status_history_are_recorded(auth_client: TestClient
     assert body["status_history"][-1]["reviewer_name"] == "Analyst B"
 
 
+def test_bulk_scan_status_update_applies_to_selected_cases(auth_client: TestClient) -> None:
+    first = auth_client.post("/api/scan/url", json={"url": DEMO_URL}).json()["scan"]["scan_id"]
+    second = auth_client.post("/api/scan/message", json={"message": "Urgent bank update please verify now"}).json()["scan"]["scan_id"]
+
+    response = auth_client.patch(
+        "/api/scans/bulk-status",
+        json={
+            "scan_ids": [first, second],
+            "status": "DISMISSED",
+            "reviewer_name": "Ops Lead",
+            "assigned_to": "Ops Lead",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["updated"] == 2
+    assert {item["scan_id"] for item in body["items"]} == {first, second}
+    assert all(item["status"] == "DISMISSED" for item in body["items"])
+    assert all(item["assigned_to"] == "Ops Lead" for item in body["items"])
+
+
 def test_missing_scan_returns_404(auth_client: TestClient) -> None:
     assert auth_client.get("/api/scans/999999").status_code == 404
 

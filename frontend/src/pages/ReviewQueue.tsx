@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowRight,
+  CheckCheck,
   Download,
   Filter,
   ShieldAlert,
@@ -28,6 +29,8 @@ const REVIEW_LEVELS: Array<'ALL' | RiskLevel> = ['ALL', 'HIGH', 'CRITICAL']
 export default function ReviewQueue() {
   const toast = useToast()
   const [riskFilter, setRiskFilter] = useState<'ALL' | RiskLevel>('ALL')
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [bulkSaving, setBulkSaving] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
 
   const { data, loading, error, reload } = useAsync(async () => {
@@ -67,6 +70,34 @@ export default function ReviewQueue() {
       toast.error(apiErrorMessage(caught, 'The report could not be downloaded.'))
     } finally {
       setDownloadingId(null)
+    }
+  }
+
+  function toggleSelected(scanId: number) {
+    setSelectedIds((current) =>
+      current.includes(scanId) ? current.filter((id) => id !== scanId) : [...current, scanId],
+    )
+  }
+
+  async function bulkApplyStatus(status: 'REVIEWED' | 'DISMISSED') {
+    if (!selectedIds.length) {
+      toast.push('Select at least one scan to apply a bulk triage action.', 'info')
+      return
+    }
+
+    setBulkSaving(true)
+    try {
+      const result = await scanService.bulkUpdateStatus(selectedIds, status, {
+        reviewer_name: 'Ops Lead',
+        assigned_to: 'Ops Lead',
+      })
+      setSelectedIds([])
+      await reload()
+      toast.success(`Updated ${result.updated} scan${result.updated === 1 ? '' : 's'} to ${status.toLowerCase()}.`)
+    } catch (caught) {
+      toast.error(apiErrorMessage(caught, 'The bulk triage update could not be applied.'))
+    } finally {
+      setBulkSaving(false)
     }
   }
 
@@ -121,6 +152,26 @@ export default function ReviewQueue() {
           </div>
         }
       />
+
+      {selectedIds.length > 0 && (
+        <Card className="mb-5 border-cyan-400/20 bg-cyan-500/5">
+          <CardBody className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-ink">
+              {selectedIds.length} scan{selectedIds.length === 1 ? '' : 's'} selected for bulk triage.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" loading={bulkSaving} onClick={() => bulkApplyStatus('REVIEWED')}>
+                <CheckCheck className="h-4 w-4" aria-hidden />
+                Mark reviewed
+              </Button>
+              <Button size="sm" variant="outline" loading={bulkSaving} onClick={() => bulkApplyStatus('DISMISSED')}>
+                <ShieldX className="h-4 w-4" aria-hidden />
+                Dismiss
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {error && (
         <Alert tone="danger" className="mb-5" title="Could not load the review queue">
@@ -198,31 +249,41 @@ export default function ReviewQueue() {
               {visibleQueue.map((scan) => (
                 <div key={scan.scan_id} className="rounded-xl border border-hairline bg-surface-2/60 p-4">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
-                          #{scan.scan_id}
-                        </span>
-                        <span className="rounded-full border border-cyan-400/20 bg-cyan-500/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-cyan-200">
-                          {scan.scan_type}
-                        </span>
-                        <RiskBadge level={scan.risk_level} score={scan.risk_score} />
-                      </div>
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(scan.scan_id)}
+                        onChange={() => toggleSelected(scan.scan_id)}
+                        className="mt-1.5 h-4 w-4 rounded border-hairline bg-surface-3 text-cyan-400 focus:ring-cyan-400/40"
+                        aria-label={`Select scan ${scan.scan_id}`}
+                      />
 
-                      <Link
-                        to={`/dashboard/scans/${scan.scan_id}`}
-                        className="mt-3 block truncate text-[16px] font-semibold text-ink transition-colors hover:text-cyan-300"
-                        title={scan.target_label}
-                      >
-                        {scan.target_label}
-                      </Link>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                            #{scan.scan_id}
+                          </span>
+                          <span className="rounded-full border border-cyan-400/20 bg-cyan-500/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-cyan-200">
+                            {scan.scan_type}
+                          </span>
+                          <RiskBadge level={scan.risk_level} score={scan.risk_score} />
+                        </div>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-4 text-[12px] text-ink-muted">
-                        <span>{scan.prediction}</span>
-                        <span>•</span>
-                        <span>{relativeTime(scan.created_at)}</span>
-                        <span>•</span>
-                        <span>{formatDateTime(scan.created_at)}</span>
+                        <Link
+                          to={`/dashboard/scans/${scan.scan_id}`}
+                          className="mt-3 block truncate text-[16px] font-semibold text-ink transition-colors hover:text-cyan-300"
+                          title={scan.target_label}
+                        >
+                          {scan.target_label}
+                        </Link>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-4 text-[12px] text-ink-muted">
+                          <span>{scan.prediction}</span>
+                          <span>•</span>
+                          <span>{relativeTime(scan.created_at)}</span>
+                          <span>•</span>
+                          <span>{formatDateTime(scan.created_at)}</span>
+                        </div>
                       </div>
                     </div>
 

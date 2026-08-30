@@ -72,6 +72,24 @@ export const scanService = {
     return data
   },
 
+  async bulkUpdateStatus(
+    scanIds: number[],
+    status: ScanDetail['status'],
+    metadata?: {
+      reviewer_name?: string
+      assigned_to?: string
+      analyst_notes?: string
+      escalation_reason?: string
+    },
+  ): Promise<{ updated: number; items: ScanDetail[] }> {
+    const { data } = await api.patch<{ updated: number; items: ScanDetail[] }>(`/scans/bulk-status`, {
+      scan_ids: scanIds,
+      status,
+      ...metadata,
+    })
+    return data
+  },
+
   async remove(scanId: number): Promise<void> {
     await api.delete(`/scans/${scanId}`)
   },

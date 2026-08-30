@@ -92,6 +92,15 @@ class ScanStatusUpdateRequest(BaseModel):
     escalation_reason: str | None = None
 
 
+class BulkScanStatusUpdateRequest(BaseModel):
+    scan_ids: list[int] = Field(..., min_length=1)
+    status: ScanStatus
+    reviewer_name: str | None = None
+    assigned_to: str | None = None
+    analyst_notes: str | None = None
+    escalation_reason: str | None = None
+
+
 # --- Modality results ---------------------------------------------------------
 
 
