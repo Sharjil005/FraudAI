@@ -1,9 +1,19 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, FileText, Link2, MessageSquare, Trash2 } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Download,
+  FileText,
+  Link2,
+  MessageSquare,
+  Trash2,
+} from 'lucide-react'
 import { RiskBadge } from '@/components/ui/Badge'
 import { SkeletonRows } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { useToast } from '@/components/ui/Toast'
+import { apiErrorMessage } from '@/services/api'
+import { reportService } from '@/services/reportService'
 import { cn } from '@/lib/cn'
 import { relativeTime, truncate } from '@/lib/format'
 import { riskTheme } from '@/lib/risk'
@@ -61,6 +71,21 @@ export function ScanHistoryTable({
   deletingId?: number | null
   compact?: boolean
 }) {
+  const toast = useToast()
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+
+  async function handleDownload(scanId: number) {
+    setDownloadingId(scanId)
+    try {
+      const filename = await reportService.download(scanId, 'pdf')
+      toast.success(`Report downloaded — ${filename}`)
+    } catch (caught) {
+      toast.error(apiErrorMessage(caught, 'The report could not be downloaded.'))
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
   if (loading) return <SkeletonRows rows={compact ? 4 : 6} />
 
   if (!items.length) {
@@ -136,6 +161,16 @@ export function ScanHistoryTable({
                       >
                         <ArrowUpRight className="h-4 w-4" aria-hidden />
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(scan.scan_id)}
+                        disabled={downloadingId === scan.scan_id}
+                        className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-cyan-500/10 hover:text-cyan-300 disabled:opacity-40"
+                        aria-label={`Download report for scan ${scan.scan_id}`}
+                        title="Download PDF report"
+                      >
+                        <Download className={cn('h-4 w-4', downloadingId === scan.scan_id && 'animate-pulse')} aria-hidden />
+                      </button>
                       {onDelete && (
                         <button
                           type="button"
@@ -186,17 +221,29 @@ export function ScanHistoryTable({
                     </span>
                   </div>
                 </div>
-                {onDelete && (
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => onDelete(scan)}
-                    disabled={deletingId === scan.scan_id}
-                    className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
-                    aria-label={`Delete scan ${scan.scan_id}`}
+                    onClick={() => handleDownload(scan.scan_id)}
+                    disabled={downloadingId === scan.scan_id}
+                    className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-cyan-500/10 hover:text-cyan-300 disabled:opacity-40"
+                    aria-label={`Download report for scan ${scan.scan_id}`}
+                    title="Download PDF report"
                   >
-                    <Trash2 className="h-4 w-4" aria-hidden />
+                    <Download className={cn('h-4 w-4', downloadingId === scan.scan_id && 'animate-pulse')} aria-hidden />
                   </button>
-                )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(scan)}
+                      disabled={deletingId === scan.scan_id}
+                      className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
+                      aria-label={`Delete scan ${scan.scan_id}`}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </button>
+                  )}
+                </div>
               </div>
             </li>
           )
