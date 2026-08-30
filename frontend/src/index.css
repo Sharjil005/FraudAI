@@ -43,6 +43,24 @@
   --animate-float: float 7s ease-in-out infinite;
 }
 
+:root[data-theme='light'] {
+  --color-void: #f3f7ff;
+  --color-abyss: #eef4ff;
+  --color-surface: #ffffff;
+  --color-surface-2: #f2f6ff;
+  --color-surface-3: #e8eefb;
+  --color-hairline: #d7e0f7;
+
+  --color-ink: #111827;
+  --color-ink-muted: #46536d;
+  --color-ink-faint: #6b7280;
+
+  --color-cyan-glow: #0ea5e9;
+  --color-violet-glow: #6d5efc;
+  --color-brand: #0ea5e9;
+  --color-brand-2: #4f46e5;
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;

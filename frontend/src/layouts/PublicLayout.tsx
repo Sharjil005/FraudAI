@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { Logo } from '@/components/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/cn'
@@ -37,6 +38,7 @@ export function PublicLayout() {
           </nav>
 
           <div className="hidden items-center gap-2.5 md:flex">
+            <ThemeToggle />
             {isAuthenticated ? (
               <Link
                 to="/dashboard"
@@ -89,6 +91,9 @@ export function PublicLayout() {
               ))}
             </nav>
             <div className="mt-3 flex flex-col gap-2.5 border-t border-hairline/60 pt-4">
+              <div className="mb-1 flex justify-end">
+                <ThemeToggle />
+              </div>
               {isAuthenticated ? (
                 <Link
                   to="/dashboard"

@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Badge } from '@/components/ui/Badge'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/cn'
@@ -145,6 +146,7 @@ export function DashboardLayout() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
             <span className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300 sm:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
               Engines online
