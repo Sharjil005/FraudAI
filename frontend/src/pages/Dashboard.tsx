@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Activity,
@@ -27,7 +28,9 @@ import {
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { dashboardService } from '@/services/dashboardService'
+import { api } from '@/services/api'
 import { formatDateTime } from '@/lib/format'
+import { cn } from '@/lib/cn'
 import type { DashboardSummary, StatCard } from '@/types'
 
 const STAT_ICON: Record<string, typeof Activity> = {
@@ -72,12 +75,57 @@ const QUICK_ACTIONS = [
   },
 ]
 
+type CapabilityState = {
+  online: boolean
+  modelCount: number
+  ocrAvailable: boolean
+  fallbackText: string
+}
+
 export default function Dashboard() {
   const { user } = useAuth()
   const { data, loading, error, reload } = useAsync<DashboardSummary>(
     () => dashboardService.summary(),
     [],
   )
+  const [capabilities, setCapabilities] = useState<CapabilityState>({
+    online: false,
+    modelCount: 0,
+    ocrAvailable: false,
+    fallbackText: 'Checking engine status…',
+  })
+
+  useEffect(() => {
+    let active = true
+
+    api
+      .get('/scan/capabilities')
+      .then(({ data: response }) => {
+        if (!active) return
+        const modelEntries = response?.models ?? {}
+        setCapabilities({
+          online: true,
+          modelCount: Object.keys(modelEntries).length,
+          ocrAvailable: Boolean(response?.ocr?.available),
+          fallbackText:
+            response?.ocr?.fallback ??
+            (response?.ocr?.available ? 'OCR is enabled and ready' : 'OCR fallback is active'),
+        })
+      })
+      .catch(() => {
+        if (!active) return
+        setCapabilities({
+          online: false,
+          modelCount: 0,
+          ocrAvailable: false,
+          fallbackText: 'Backend unavailable. Start the API to enable live scans.',
+        })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const firstName = (user?.name ?? '').split(' ')[0] || 'there'
 
@@ -101,25 +149,63 @@ export default function Dashboard() {
         </Alert>
       )}
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {loading && !data
-          ? Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)
-          : (data?.stats ?? []).slice(0, 4).map((stat: StatCard) => {
-              const Icon = STAT_ICON[stat.key] ?? Activity
-              return (
-                <StatTile
-                  key={stat.key}
-                  label={stat.label}
-                  value={stat.unit === '%' ? `${stat.value.toFixed(1)}` : stat.value}
-                  unit={stat.unit}
-                  delta={stat.delta}
-                  hint={stat.hint}
-                  accent={STAT_ACCENT[stat.key] ?? 'cyan'}
-                  icon={<Icon className="h-4 w-4" aria-hidden />}
-                />
-              )
-            })}
+      <div className="mb-5 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {loading && !data
+            ? Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)
+            : (data?.stats ?? []).slice(0, 4).map((stat: StatCard) => {
+                const Icon = STAT_ICON[stat.key] ?? Activity
+                return (
+                  <StatTile
+                    key={stat.key}
+                    label={stat.label}
+                    value={stat.unit === '%' ? `${stat.value.toFixed(1)}` : stat.value}
+                    unit={stat.unit}
+                    delta={stat.delta}
+                    hint={stat.hint}
+                    accent={STAT_ACCENT[stat.key] ?? 'cyan'}
+                    icon={<Icon className="h-4 w-4" aria-hidden />}
+                  />
+                )
+              })}
+        </div>
+
+        <Card>
+          <CardHeader
+            title="Engine status"
+            subtitle="Live analysis backend"
+            icon={<ShieldCheck className="h-4 w-4" aria-hidden />}
+          />
+          <CardBody className="pt-5">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'h-2.5 w-2.5 rounded-full',
+                  capabilities.online ? 'bg-emerald-400' : 'bg-amber-400',
+                )}
+                aria-hidden
+              />
+              <p className="text-[13px] font-medium text-ink">
+                {capabilities.online ? 'API connected' : 'Waiting for backend'}
+              </p>
+            </div>
+            <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
+              {capabilities.fallbackText}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
+              <div className="rounded-lg border border-hairline bg-surface-2/60 px-2.5 py-2">
+                <span className="block text-ink-faint">Models</span>
+                <span className="mt-1 block font-semibold text-ink">{capabilities.modelCount}</span>
+              </div>
+              <div className="rounded-lg border border-hairline bg-surface-2/60 px-2.5 py-2">
+                <span className="block text-ink-faint">OCR</span>
+                <span className="mt-1 block font-semibold text-ink">
+                  {capabilities.ocrAvailable ? 'ready' : 'fallback'}
+                </span>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       </div>
 
       {/* Quick actions */}
