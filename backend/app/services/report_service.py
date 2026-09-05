@@ -282,6 +282,18 @@ def _target_rows(scan: dict[str, Any]) -> list[tuple[str, str]]:
         metadata = scan.get("document_metadata") or {}
         if metadata.get("sha256"):
             rows.append(("SHA-256", str(metadata["sha256"])))
+    if scan.get("vpa"):
+        rows.append(("Payee VPA / UPI ID", str(scan["vpa"])))
+    if scan.get("payee_name"):
+        rows.append(("Payee Name", str(scan["payee_name"])))
+    if scan.get("amount") is not None:
+        rows.append(("Requested Amount", f"{scan.get('currency', 'INR')} {scan['amount']:,.2f}"))
+    if scan.get("transaction_note"):
+        rows.append(("Transaction Note", str(scan["transaction_note"])))
+    if scan.get("qr_type"):
+        rows.append(("Payload Type", str(scan["qr_type"])))
+    if scan.get("raw_payload") and not scan.get("vpa"):
+        rows.append(("Decoded Payload", str(scan["raw_payload"])[:300]))
     if scan.get("detected_categories"):
         rows.append(("Detected Categories", ", ".join(scan["detected_categories"])))
     if scan.get("suspicious_phrases"):

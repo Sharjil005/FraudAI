@@ -18,7 +18,7 @@ import { RISK_LEVELS, RISK_BANDS } from '@/lib/risk'
 import type { RiskLevel, ScanListItem, ScanListResponse, ScanType } from '@/types'
 
 const PAGE_SIZE = 10
-const SCAN_TYPES: ScanType[] = ['URL', 'MESSAGE', 'DOCUMENT']
+const SCAN_TYPES: ScanType[] = ['URL', 'MESSAGE', 'DOCUMENT', 'QR']
 
 export default function ScanHistory() {
   const toast = useToast()

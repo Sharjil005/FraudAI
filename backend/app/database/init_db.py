@@ -11,6 +11,7 @@ from app.core.security import hash_password
 from app.database.session import Base, DATABASE_FLAVOUR, SessionLocal, engine
 from app.models import user as _user_model  # noqa: F401 - register mappers
 from app.models import scan as _scan_model  # noqa: F401 - register mappers
+from app.models import social as _social_model  # noqa: F401 - register mappers
 from app.models.user import User, UserRole
 
 logger = get_logger(__name__)
@@ -92,7 +93,23 @@ def create_bootstrap_users() -> None:
         )
 
 
+def repair_postgres_schema() -> None:
+    """Backfill missing columns for PostgreSQL in Docker/production."""
+    if settings.is_sqlite:
+        return
+
+    with engine.begin() as conn:
+        try:
+            conn.exec_driver_sql(
+                "ALTER TABLE threat_alerts ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE NOT NULL"
+            )
+            logger.info("Checked/added is_read column to threat_alerts table in PostgreSQL.")
+        except Exception as e:
+            logger.error("Failed to run PostgreSQL schema repair: %s", e)
+
+
 def init_db() -> None:
     create_tables()
     repair_sqlite_schema()
+    repair_postgres_schema()
     create_bootstrap_users()

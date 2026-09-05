@@ -75,6 +75,7 @@ export const SCAN_TYPE_LABEL: Record<ScanType, string> = {
   URL: 'URL',
   MESSAGE: 'Message',
   DOCUMENT: 'Document',
+  QR: 'QR & UPI',
 }
 
 export function riskLevelFromScore(score: number): RiskLevel {
