@@ -9,10 +9,12 @@ import Dashboard from '@/pages/Dashboard'
 import UrlScanner from '@/pages/UrlScanner'
 import MessageScanner from '@/pages/MessageScanner'
 import DocumentScanner from '@/pages/DocumentScanner'
+import QrScanner from '@/pages/QrScanner'
 import ScanHistory from '@/pages/ScanHistory'
 import ScanDetails from '@/pages/ScanDetails'
 import ReviewQueue from '@/pages/ReviewQueue'
 import AdminDashboard from '@/pages/AdminDashboard'
+import SocialCircle from '@/pages/SocialCircle'
 import NotFound from '@/pages/NotFound'
 
 /**
@@ -44,9 +46,11 @@ export default function App() {
           <Route path="scan/url" element={<UrlScanner />} />
           <Route path="scan/message" element={<MessageScanner />} />
           <Route path="scan/document" element={<DocumentScanner />} />
+          <Route path="scan/qr" element={<QrScanner />} />
           <Route path="history" element={<ScanHistory />} />
           <Route path="review" element={<ReviewQueue />} />
           <Route path="scans/:scanId" element={<ScanDetails />} />
+          <Route path="social" element={<SocialCircle />} />
 
           {/* Admin-only */}
           <Route element={<AdminRoute />}>

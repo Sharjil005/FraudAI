@@ -9,6 +9,7 @@ import {
   Gauge,
   Link2,
   MessageSquare,
+  QrCode,
   RefreshCw,
   ScanLine,
   ShieldCheck,
@@ -28,6 +29,7 @@ import {
 } from '@/components/charts/Charts'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
+import ThreatAlertsList from '@/components/ThreatAlertsList'
 import { dashboardService } from '@/services/dashboardService'
 import { api } from '@/services/api'
 import { formatDateTime } from '@/lib/format'
@@ -73,6 +75,13 @@ const QUICK_ACTIONS = [
     title: 'Scan a document',
     body: 'Upload an invoice, screenshot or PDF for anomaly review.',
     accent: 'border-pink-400/25 bg-pink-400/10 text-pink-300',
+  },
+  {
+    to: '/dashboard/scan/qr',
+    icon: QrCode,
+    title: 'Scan a QR / UPI',
+    body: 'Inspect payment QR codes and UPI collect links for fraud traps.',
+    accent: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
   },
 ]
 
@@ -209,6 +218,10 @@ export default function Dashboard() {
         </Alert>
       )}
 
+      <div className="mb-5">
+        <ThreatAlertsList />
+      </div>
+
       <div className="mb-5 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {loading && !data
@@ -269,7 +282,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick actions */}
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {QUICK_ACTIONS.map((action) => (
           <Link key={action.to} to={action.to} className="group">
             <Card className="h-full transition-colors hover:border-cyan-400/30">

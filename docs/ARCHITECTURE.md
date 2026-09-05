@@ -96,6 +96,7 @@ Multi-signal fusion, when more than one surface is available for the same artefa
 users ─┬─< scans ─┬─< url_scans
        │          ├─< message_scans
        │          ├─< document_scans
+       │          ├─< qr_scans
        │          └─< risk_assessments
 ```
 
