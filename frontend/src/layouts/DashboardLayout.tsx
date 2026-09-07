@@ -9,8 +9,10 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  QrCode,
   Shield,
   ShieldAlert,
+  Users,
   X,
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
@@ -31,7 +33,10 @@ interface NavItem {
 const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
   {
     heading: 'Overview',
-    items: [{ to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true }],
+    items: [
+      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+      { to: '/dashboard/social', label: 'Safety Circle', icon: Users },
+    ],
   },
   {
     heading: 'Analyse',
@@ -39,6 +44,7 @@ const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
       { to: '/dashboard/scan/url', label: 'URL Scanner', icon: Link2 },
       { to: '/dashboard/scan/message', label: 'Message Scanner', icon: MessageSquare },
       { to: '/dashboard/scan/document', label: 'Document Scanner', icon: FileText },
+      { to: '/dashboard/scan/qr', label: 'QR & UPI Scanner', icon: QrCode },
     ],
   },
   {

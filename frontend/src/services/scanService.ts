@@ -3,6 +3,7 @@ import type {
   Capabilities,
   DocumentScanResult,
   MessageScanResult,
+  QrScanResult,
   ScanDetail,
   ScanHistoryQuery,
   ScanListResponse,
@@ -33,6 +34,36 @@ export const scanService = {
           onProgress(Math.round((event.loaded / event.total) * 100))
         }
       },
+    })
+    return data
+  },
+
+  async scanQr(options: {
+    file?: File
+    payload?: string
+    claimed_intent?: 'GENERAL_SCAN' | 'RECEIVE_MONEY' | 'SEND_MONEY'
+    onProgress?: (percent: number) => void
+  }): Promise<QrScanResult> {
+    if (options.file) {
+      const form = new FormData()
+      form.append('file', options.file)
+      if (options.claimed_intent) {
+        form.append('claimed_intent', options.claimed_intent)
+      }
+      const { data } = await api.post<QrScanResult>('/scan/qr/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (event) => {
+          if (options.onProgress && event.total) {
+            options.onProgress(Math.round((event.loaded / event.total) * 100))
+          }
+        },
+      })
+      return data
+    }
+
+    const { data } = await api.post<QrScanResult>('/scan/qr', {
+      payload: options.payload,
+      claimed_intent: options.claimed_intent ?? 'GENERAL_SCAN',
     })
     return data
   },

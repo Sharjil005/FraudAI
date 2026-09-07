@@ -51,6 +51,19 @@ class MessageScanRequest(BaseModel):
         return cleaned
 
 
+class QrScanRequest(BaseModel):
+    payload: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=4096,
+        examples=["upi://pay?pa=merchant@okaxis&pn=Merchant&am=150.00&cu=INR"],
+    )
+    claimed_intent: Literal["GENERAL_SCAN", "RECEIVE_MONEY", "SEND_MONEY"] = Field(
+        default="GENERAL_SCAN",
+        description="Whether the user expects to send money, receive money, or just scan",
+    )
+
+
 # --- Shared result parts ------------------------------------------------------
 
 
@@ -163,6 +176,29 @@ class DocumentScanResult(BaseModel):
     analysis_details: dict[str, Any]
 
 
+class QrScanResult(BaseModel):
+    scan: ScanEnvelope
+    raw_payload: str
+    qr_type: str
+    vpa: str = ""
+    payee_name: str = ""
+    amount: float | None = None
+    currency: str = "INR"
+    transaction_note: str = ""
+    merchant_code: str = ""
+    is_collect_request: bool = False
+    prediction: str = Field(..., examples=["Scam", "Suspicious", "Safe"])
+    risk_score: float = Field(..., ge=0, le=100)
+    risk_level: RiskLevel
+    confidence: float
+    indicators: list[IndicatorOut]
+    explanation: str
+    recommendation: str
+    risk_assessment: RiskAssessmentOut
+    analysis_details: dict[str, Any] = Field(default_factory=dict)
+    embedded_url_analysis: dict[str, Any] | None = None
+
+
 # --- History ------------------------------------------------------------------
 
 
@@ -221,4 +257,15 @@ class ScanDetail(BaseModel):
     detected_categories: list[str] | None = None
     suspicious_phrases: list[str] | None = None
     disclaimer: str | None = None
+    # QR specific extras
+    raw_payload: str | None = None
+    qr_type: str | None = None
+    vpa: str | None = None
+    payee_name: str | None = None
+    amount: float | None = None
+    currency: str | None = None
+    transaction_note: str | None = None
+    merchant_code: str | None = None
+    is_collect_request: bool | None = None
+    embedded_url_analysis: dict[str, Any] | None = None
     user: dict[str, Any] | None = None

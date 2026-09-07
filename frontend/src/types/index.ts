@@ -4,7 +4,7 @@
  */
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-export type ScanType = 'URL' | 'MESSAGE' | 'DOCUMENT'
+export type ScanType = 'URL' | 'MESSAGE' | 'DOCUMENT' | 'QR'
 export type ScanStatus =
   | 'PENDING'
   | 'COMPLETED'
@@ -107,7 +107,24 @@ export interface DocumentScanResult extends ScanResultBase {
   disclaimer: string
 }
 
-export type AnyScanResult = UrlScanResult | MessageScanResult | DocumentScanResult
+export interface QrScanResult extends ScanResultBase {
+  raw_payload: string
+  qr_type: 'UPI' | 'URL' | 'TEXT'
+  vpa: string
+  payee_name: string
+  amount?: number | null
+  currency: string
+  transaction_note: string
+  merchant_code: string
+  is_collect_request: boolean
+  embedded_url_analysis?: Record<string, unknown> | null
+}
+
+export type AnyScanResult =
+  | UrlScanResult
+  | MessageScanResult
+  | DocumentScanResult
+  | QrScanResult
 
 export interface ScanListItem {
   scan_id: number
@@ -168,6 +185,16 @@ export interface ScanDetail {
   ocr_available?: boolean
   document_metadata?: Record<string, unknown>
   disclaimer?: string
+  raw_payload?: string
+  qr_type?: string
+  vpa?: string
+  payee_name?: string
+  amount?: number | null
+  currency?: string
+  transaction_note?: string
+  merchant_code?: string
+  is_collect_request?: boolean
+  embedded_url_analysis?: Record<string, unknown> | null
   user?: { id: number; name: string; email: string; role: string }
 }
 
@@ -308,4 +335,41 @@ export interface ScanHistoryQuery {
   scan_type?: ScanType | ''
   risk_level?: RiskLevel | ''
   search?: string
+}
+
+export type FriendshipStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED'
+
+export interface Friendship {
+  id: number
+  user_id: number
+  friend_id: number
+  status: FriendshipStatus
+  created_at: string
+  friend_name: string
+  friend_email: string
+}
+
+export interface SafetyGroup {
+  id: number
+  name: string
+  creator_id: number
+  created_at: string
+  members: User[]
+}
+
+export interface ThreatAlert {
+  id: number
+  sender_id: number
+  sender_name: string
+  sender_email: string
+  scan_id: number
+  scan_type: ScanType
+  target_label: string
+  risk_score: number
+  risk_level: RiskLevel
+  note: string
+  group_id: number | null
+  group_name: string | null
+  created_at: string
+  is_read: boolean
 }

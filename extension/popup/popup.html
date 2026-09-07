@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FraudShield AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Top Bar -->
+    <header class="popup-header">
+      <div class="brand">
+        <div class="shield-logo">
+          <svg viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1>FraudShield AI</h1>
+          <span class="sub-text">Neural Threat Defense</span>
+        </div>
+      </div>
+      <div class="status-indicator" id="status-indicator" title="Backend Server Status">
+        <span class="status-dot"></span>
+        <span class="status-label" id="status-label">Checking...</span>
+      </div>
+    </header>
+
+    <!-- Active Tab Quick Bar -->
+    <section class="current-tab-section">
+      <div class="section-label">Active Webpage</div>
+      <div class="tab-url-row">
+        <div class="current-url-display" id="current-url">Detecting page…</div>
+        <button id="btn-scan-current" class="btn-sm-cyan" title="Scan this page now">
+          Scan Page
+        </button>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-url">Inspect URL</button>
+      <button class="tab-btn" data-tab="tab-message">Scan Message</button>
+      <button class="tab-btn" data-tab="tab-settings">Config</button>
+    </div>
+
+    <!-- Tab 1: URL Inspector -->
+    <div class="tab-pane active" id="tab-url">
+      <div class="input-group">
+        <label for="input-url">Target URL or Domain</label>
+        <div class="input-with-action">
+          <input type="url" id="input-url" placeholder="https://suspicious-login.com/verify" />
+          <button id="btn-clear-url" class="btn-icon" title="Clear">✕</button>
+        </div>
+      </div>
+
+      <div class="presets-row">
+        <span class="preset-label">Test with demo:</span>
+        <button class="preset-pill" id="preset-url-phish">Phishing Link</button>
+        <button class="preset-pill" id="preset-url-safe">Safe Domain</button>
+      </div>
+
+      <button id="btn-run-url" class="btn-primary-gradient">
+        <span class="btn-text">Analyze URL Safety</span>
+        <span class="btn-spinner" style="display: none;"></span>
+      </button>
+    </div>
+
+    <!-- Tab 2: Message Scanner -->
+    <div class="tab-pane" id="tab-message">
+      <div class="input-group">
+        <label for="input-message">Message, SMS or Email Text</label>
+        <textarea id="input-message" rows="3" placeholder="Paste suspicious SMS, lottery message, or bank notice…"></textarea>
+      </div>
+
+      <div class="presets-row">
+        <span class="preset-label">Test with demo:</span>
+        <button class="preset-pill" id="preset-msg-otp">OTP Trap</button>
+        <button class="preset-pill" id="preset-msg-kyc">Fake KYC</button>
+      </div>
+
+      <button id="btn-run-message" class="btn-primary-gradient">
+        <span class="btn-text">Detect Message Scams</span>
+        <span class="btn-spinner" style="display: none;"></span>
+      </button>
+    </div>
+
+    <!-- Tab 3: Configuration -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="input-group">
+        <label for="setting-api-base">API Server Endpoint</label>
+        <input type="text" id="setting-api-base" value="http://localhost:8000/api" />
+      </div>
+      <div class="input-group">
+        <label for="setting-dashboard-url">Dashboard Web URL</label>
+        <input type="text" id="setting-dashboard-url" value="http://localhost:3000" />
+      </div>
+      <div class="actions-group">
+        <button id="btn-save-settings" class="btn-secondary">Save Settings</button>
+        <button id="btn-quick-auth" class="btn-outline-cyan">Re-authenticate Demo</button>
+      </div>
+      <div id="settings-feedback" class="feedback-msg"></div>
+    </div>
+
+    <!-- Results Section (Dynamic) -->
+    <section class="results-container" id="results-container" style="display: none;">
+      <div class="verdict-banner" id="verdict-banner">
+        <div class="verdict-info">
+          <span class="verdict-tag" id="verdict-tag">ANALYZING</span>
+          <span class="verdict-title" id="verdict-title">Processing...</span>
+        </div>
+        <div class="score-circle" id="score-circle">
+          <span class="score-number" id="score-number">--</span>
+          <span class="score-label">/100</span>
+        </div>
+      </div>
+
+      <div class="result-details">
+        <p class="result-explanation" id="result-explanation"></p>
+        
+        <div id="result-indicators-box" style="display: none;">
+          <div class="indicators-heading">Contributing Signals</div>
+          <ul class="indicators-list" id="indicators-list"></ul>
+        </div>
+      </div>
+
+      <div class="result-footer-actions">
+        <a id="link-dashboard-detail" href="http://localhost:3000/dashboard" target="_blank" class="btn-dashboard-link">
+          Open In Full Dashboard ↗
+        </a>
+      </div>
+    </section>
+
+    <!-- Error Banner -->
+    <div class="error-banner" id="error-banner" style="display: none;">
+      <span class="error-text" id="error-text"></span>
+    </div>
+
+    <!-- Popup Footer -->
+    <footer class="popup-footer">
+      <a href="http://localhost:3000/dashboard" target="_blank" class="footer-link">
+        📊 Open Web Dashboard
+      </a>
+      <span class="footer-divider">•</span>
+      <a href="http://localhost:8000/docs" target="_blank" class="footer-link">
+        Docs
+      </a>
+      <span class="footer-divider">•</span>
+      <span class="version-tag">v1.0</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

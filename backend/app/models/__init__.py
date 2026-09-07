@@ -9,6 +9,7 @@ from app.models.scan import (
     ScanStatus,
     ScanType,
     UrlScan,
+    QrScan,
 )
 from app.models.user import User, UserRole
 
@@ -21,6 +22,7 @@ __all__ = [
     "ScanStatus",
     "ScanType",
     "UrlScan",
+    "QrScan",
     "User",
     "UserRole",
 ]

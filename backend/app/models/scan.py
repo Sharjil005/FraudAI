@@ -19,6 +19,7 @@ class ScanType(str, enum.Enum):
     URL = "URL"
     MESSAGE = "MESSAGE"
     DOCUMENT = "DOCUMENT"
+    QR = "QR"
 
 
 class ScanStatus(str, enum.Enum):
@@ -75,13 +76,16 @@ class Scan(Base):
     document_scan: Mapped["DocumentScan | None"] = relationship(
         back_populates="scan", cascade="all, delete-orphan", uselist=False, lazy="selectin"
     )
+    qr_scan: Mapped["QrScan | None"] = relationship(
+        back_populates="scan", cascade="all, delete-orphan", uselist=False, lazy="selectin"
+    )
     risk_assessment: Mapped["RiskAssessment | None"] = relationship(
         back_populates="scan", cascade="all, delete-orphan", uselist=False, lazy="selectin"
     )
 
     @property
-    def detail(self) -> "UrlScan | MessageScan | DocumentScan | None":
-        return self.url_scan or self.message_scan or self.document_scan
+    def detail(self) -> "UrlScan | MessageScan | DocumentScan | QrScan | None":
+        return self.url_scan or self.message_scan or self.document_scan or self.qr_scan
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Scan id={self.id} type={self.scan_type.value} status={self.status.value}>"
@@ -148,6 +152,31 @@ class DocumentScan(Base):
     analysis_details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     scan: Mapped["Scan"] = relationship(back_populates="document_scan")
+
+
+class QrScan(Base):
+    __tablename__ = "qr_scans"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    scan_id: Mapped[int] = mapped_column(
+        ForeignKey("scans.id", ondelete="CASCADE"), unique=True, index=True, nullable=False
+    )
+    raw_payload: Mapped[str] = mapped_column(Text, nullable=False)
+    qr_type: Mapped[str] = mapped_column(String(32), default="UPI", nullable=False)
+    vpa: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    payee_name: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    currency: Mapped[str] = mapped_column(String(16), default="INR", nullable=False)
+    transaction_note: Mapped[str] = mapped_column(String(512), default="", nullable=False)
+    merchant_code: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    is_collect_request: Mapped[bool] = mapped_column(default=False, nullable=False)
+    prediction: Mapped[str] = mapped_column(String(32), default="Safe", nullable=False)
+    risk_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    indicators: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    analysis_details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+
+    scan: Mapped["Scan"] = relationship(back_populates="qr_scan")
 
 
 class RiskAssessment(Base):

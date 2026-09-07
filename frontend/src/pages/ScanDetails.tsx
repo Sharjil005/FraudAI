@@ -7,10 +7,13 @@ import {
   FileCode2,
   FileText,
   Hash,
+  QrCode,
+  Share2,
   Tags,
   Trash2,
   TriangleAlert,
 } from 'lucide-react'
+import ShareAlertModal from '@/components/ShareAlertModal'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -35,6 +38,7 @@ export default function ScanDetails() {
   const navigate = useNavigate()
   const toast = useToast()
   const [downloading, setDownloading] = useState<'pdf' | 'html' | null>(null)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [statusSaving, setStatusSaving] = useState(false)
   const [reviewerName, setReviewerName] = useState('')
@@ -184,6 +188,15 @@ export default function ScanDetails() {
             >
               <FileCode2 className="h-4 w-4" aria-hidden />
               HTML
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20"
+              onClick={() => setShareModalOpen(true)}
+            >
+              <Share2 className="h-4 w-4" aria-hidden />
+              Share Alert
             </Button>
             <Button
               size="sm"
@@ -444,6 +457,65 @@ export default function ScanDetails() {
           </Card>
         )}
 
+        {data.scan_type === 'QR' && (
+          <Card>
+            <CardHeader
+              title="Decoded Payment Information"
+              subtitle={data.qr_type === 'UPI' ? 'NPCI UPI Payment Intent' : 'Decoded QR Matrix Data'}
+              icon={<QrCode className="h-4 w-4" aria-hidden />}
+            />
+            <CardBody className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-hairline bg-surface-2/60 p-3">
+                  <span className="block text-[10px] uppercase tracking-wider text-ink-faint font-mono">
+                    Payee VPA / UPI ID
+                  </span>
+                  <span className="mt-1 block font-mono text-sm font-semibold text-ink break-all">
+                    {data.vpa || 'Not specified'}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-hairline bg-surface-2/60 p-3">
+                  <span className="block text-[10px] uppercase tracking-wider text-ink-faint font-mono">
+                    Payee Name
+                  </span>
+                  <span className="mt-1 block text-sm font-semibold text-ink truncate">
+                    {data.payee_name || 'Not specified'}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-hairline bg-surface-2/60 p-3">
+                  <span className="block text-[10px] uppercase tracking-wider text-ink-faint font-mono">
+                    Requested Amount
+                  </span>
+                  <span className="mt-1 block text-sm font-semibold text-ink">
+                    {data.amount !== null && data.amount !== undefined
+                      ? `₹${data.amount.toLocaleString()}`
+                      : 'Variable / Open'}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-hairline bg-surface-2/60 p-3">
+                  <span className="block text-[10px] uppercase tracking-wider text-ink-faint font-mono">
+                    Transaction Note (tn)
+                  </span>
+                  <span className="mt-1 block text-sm font-semibold text-ink truncate">
+                    {data.transaction_note || 'None'}
+                  </span>
+                </div>
+              </div>
+
+              {data.raw_payload && (
+                <div>
+                  <span className="mb-1.5 block text-xs font-medium text-ink-muted">
+                    Raw Decoded Payload
+                  </span>
+                  <pre className="overflow-auto whitespace-pre-wrap break-all rounded-xl border border-hairline bg-abyss/60 p-3 font-mono text-[12px] text-ink-muted">
+                    {data.raw_payload}
+                  </pre>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
         {analysisEntries.length > 0 && (
           <Card>
             <CardHeader
@@ -489,6 +561,11 @@ export default function ScanDetails() {
           </CardBody>
         </Card>
       </ScanResultCard>
+      <ShareAlertModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        scanId={data.scan_id}
+      />
     </div>
   )
 }

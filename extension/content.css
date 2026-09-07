@@ -1,0 +1,232 @@
+/* FraudShield AI — In-Page Verdict Overlay Styling */
+
+#fraudshield-overlay-host {
+  position: fixed !important;
+  top: 24px !important;
+  right: 24px !important;
+  z-index: 2147483647 !important; /* Always on top of all page elements */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  color: #f1f5f9 !important;
+  pointer-events: none !important; /* Transparent clicks except inner card */
+}
+
+.fraudshield-card {
+  pointer-events: auto !important;
+  width: 360px !important;
+  max-width: calc(100vw - 48px) !important;
+  background: rgba(11, 17, 32, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(6, 182, 212, 0.15) !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: fraudshield-slide-in 0.3s ease-out !important;
+}
+
+@keyframes fraudshield-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fraudshield-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 12px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.fraudshield-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.02em !important;
+  color: #38bdf8 !important;
+}
+
+.fraudshield-brand svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: #38bdf8 !important;
+}
+
+.fraudshield-close {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  padding: 2px 6px !important;
+  line-height: 1 !important;
+  border-radius: 6px !important;
+  transition: all 0.15s !important;
+}
+
+.fraudshield-close:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+/* Status Banners */
+.fraudshield-verdict-banner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+.fraudshield-risk-critical {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #fca5a5 !important;
+}
+
+.fraudshield-risk-high {
+  background: rgba(249, 115, 22, 0.15) !important;
+  border: 1px solid rgba(249, 115, 22, 0.4) !important;
+  color: #fdba74 !important;
+}
+
+.fraudshield-risk-medium {
+  background: rgba(234, 179, 8, 0.15) !important;
+  border: 1px solid rgba(234, 179, 8, 0.4) !important;
+  color: #fde047 !important;
+}
+
+.fraudshield-risk-low, .fraudshield-risk-safe {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #6ee7b7 !important;
+}
+
+.fraudshield-verdict-title {
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.fraudshield-score-pill {
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  padding: 3px 8px !important;
+  border-radius: 9999px !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+
+.fraudshield-target-box {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  margin-bottom: 12px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 11px !important;
+  color: #cbd5e1 !important;
+  word-break: break-all !important;
+  max-height: 48px !important;
+  overflow-y: auto !important;
+}
+
+.fraudshield-explanation {
+  font-size: 12px !important;
+  color: #e2e8f0 !important;
+  line-height: 1.45 !important;
+  margin-bottom: 12px !important;
+}
+
+.fraudshield-indicators-title {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #94a3b8 !important;
+  margin-bottom: 6px !important;
+}
+
+.fraudshield-indicators-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 0 14px 0 !important;
+}
+
+.fraudshield-indicators-list li {
+  font-size: 11px !important;
+  color: #cbd5e1 !important;
+  margin-bottom: 4px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+}
+
+.fraudshield-indicators-list li::before {
+  content: "•" !important;
+  color: #38bdf8 !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+.fraudshield-actions {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+}
+
+.fraudshield-btn-primary {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, #0284c7, #06b6d4) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+}
+
+.fraudshield-btn-primary:hover {
+  opacity: 0.9 !important;
+}
+
+.fraudshield-loading {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 8px 4px !important;
+}
+
+.fraudshield-spinner {
+  width: 22px !important;
+  height: 22px !important;
+  border: 3px solid rgba(56, 189, 248, 0.2) !important;
+  border-top-color: #38bdf8 !important;
+  border-radius: 50% !important;
+  animation: fraudshield-spin 0.8s linear infinite !important;
+}
+
+@keyframes fraudshield-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

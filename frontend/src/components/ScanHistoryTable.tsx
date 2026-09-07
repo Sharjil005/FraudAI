@@ -6,6 +6,7 @@ import {
   FileText,
   Link2,
   MessageSquare,
+  QrCode,
   Trash2,
 } from 'lucide-react'
 import { RiskBadge } from '@/components/ui/Badge'
@@ -23,12 +24,14 @@ const TYPE_ICON: Record<ScanType, typeof Link2> = {
   URL: Link2,
   MESSAGE: MessageSquare,
   DOCUMENT: FileText,
+  QR: QrCode,
 }
 
 const TYPE_ACCENT: Record<ScanType, string> = {
   URL: 'border-cyan-400/25 bg-cyan-400/10 text-cyan-300',
   MESSAGE: 'border-indigo-400/25 bg-indigo-400/10 text-indigo-300',
   DOCUMENT: 'border-pink-400/25 bg-pink-400/10 text-pink-300',
+  QR: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
 }
 
 export function ScanTypeIcon({ type, className }: { type: ScanType; className?: string }) {

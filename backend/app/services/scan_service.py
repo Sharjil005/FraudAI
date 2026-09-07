@@ -11,10 +11,12 @@ from sqlalchemy.orm import Session
 from app.core.logging_config import get_logger
 from app.ml.document_analyzer import DISCLAIMER, analyse_document
 from app.ml.message_detector import analyse_message
+from app.ml.qr_detector import analyse_qr, decode_qr_image
 from app.ml.url_detector import analyse_url
 from app.models.scan import (
     DocumentScan,
     MessageScan,
+    QrScan,
     RiskAssessment,
     RiskLevel,
     Scan,
@@ -242,6 +244,93 @@ def run_document_scan(
     }
 
 
+# --- QR & UPI -----------------------------------------------------------------
+
+
+def run_qr_scan(
+    db: Session,
+    user: User,
+    *,
+    payload: str | None = None,
+    file_bytes: bytes | None = None,
+    filename: str | None = None,
+    claimed_intent: str = "GENERAL_SCAN",
+) -> dict[str, Any]:
+    """Decode and analyze a QR code / UPI payment link, persist and return the API payload."""
+    raw_text = (payload or "").strip()
+    target_label = "QR / UPI Scan"
+
+    if file_bytes:
+        decoded = decode_qr_image(file_bytes)
+        if not decoded:
+            raise ValueError(
+                "Could not detect or decode a valid QR code from the uploaded image. "
+                "Ensure the QR code is clear, well-lit, and uncropped, or paste the UPI link directly."
+            )
+        raw_text = decoded
+        target_label = filename or "Uploaded QR Code"
+    elif raw_text:
+        target_label = raw_text[:80]
+    else:
+        raise ValueError("Either an image file or a text payload (UPI link / VPA) is required.")
+
+    result = analyse_qr(raw_text, claimed_intent=claimed_intent)
+    assessment = assess_single(ScanType.QR, result)
+
+    if result.get("vpa"):
+        target_label = f"UPI: {result['vpa']}"
+    elif result.get("qr_type") == "URL":
+        target_label = f"QR URL: {result.get('raw_payload', '')[:60]}"
+
+    scan = _persist(
+        db,
+        user=user,
+        scan_type=ScanType.QR,
+        target_label=target_label,
+        detail_row_factory=lambda scan_id: QrScan(
+            scan_id=scan_id,
+            raw_payload=result["raw_payload"],
+            qr_type=result["qr_type"],
+            vpa=result.get("vpa", ""),
+            payee_name=result.get("payee_name", ""),
+            amount=result.get("amount"),
+            currency=result.get("currency", "INR"),
+            transaction_note=result.get("transaction_note", ""),
+            merchant_code=result.get("merchant_code", ""),
+            is_collect_request=result.get("is_collect_request", False),
+            prediction=result["prediction"],
+            risk_score=result["risk_score"],
+            confidence=result["confidence"],
+            indicators=result["indicators"],
+            analysis_details={
+                "explanation": result["explanation"],
+                "recommendation": result["recommendation"],
+                "embedded_url_analysis": result.get("embedded_url_analysis"),
+                "claimed_intent": claimed_intent,
+            },
+        ),
+        assessment=assessment,
+    )
+    logger.info(
+        "QR scan #%s by user %s -> %s (%.1f)",
+        scan.id,
+        user.id,
+        result["prediction"],
+        result["risk_score"],
+    )
+    return {
+        "scan": _envelope(scan),
+        **result,
+        "risk_assessment": assessment.to_dict(),
+        "analysis_details": {
+            "explanation": result["explanation"],
+            "recommendation": result["recommendation"],
+            "embedded_url_analysis": result.get("embedded_url_analysis"),
+            "claimed_intent": claimed_intent,
+        },
+    }
+
+
 # --- Read models --------------------------------------------------------------
 
 
@@ -326,6 +415,22 @@ def scan_to_detail(scan: Scan, *, include_user: bool = False) -> dict[str, Any]:
                 "ocr_available": doc.ocr_available,
                 "document_metadata": dict(doc.doc_metadata or {}),
                 "disclaimer": analysis_details.get("disclaimer", DISCLAIMER),
+            }
+        )
+    if scan.qr_scan:
+        qr = scan.qr_scan
+        payload.update(
+            {
+                "raw_payload": qr.raw_payload,
+                "qr_type": qr.qr_type,
+                "vpa": qr.vpa,
+                "payee_name": qr.payee_name,
+                "amount": qr.amount,
+                "currency": qr.currency,
+                "transaction_note": qr.transaction_note,
+                "merchant_code": qr.merchant_code,
+                "is_collect_request": qr.is_collect_request,
+                "embedded_url_analysis": analysis_details.get("embedded_url_analysis"),
             }
         )
 

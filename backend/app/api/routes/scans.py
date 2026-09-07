@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.core.deps import CurrentUser, DbSession, Pagination
 from app.models.scan import RiskLevel, Scan, ScanType
 from app.models.user import UserRole
+from app.models.social import ThreatAlert, GroupMember
 from app.ml.model_store import registry
 from app.schemas.scan import (
     BulkScanStatusUpdateRequest,
@@ -90,7 +91,33 @@ def get_scan(scan_id: int, db: DbSession, current_user: CurrentUser) -> dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found.")
 
     is_admin = current_user.role == UserRole.ADMIN
-    if scan.user_id != current_user.id and not is_admin:
+    is_owner = scan.user_id == current_user.id
+
+    is_shared = False
+    if not is_owner and not is_admin:
+        # Check direct share
+        direct_share = db.execute(
+            select(ThreatAlert).where(
+                ThreatAlert.scan_id == scan_id,
+                ThreatAlert.receiver_id == current_user.id
+            )
+        ).first()
+        if direct_share:
+            is_shared = True
+        else:
+            # Check group share
+            group_share = db.execute(
+                select(ThreatAlert)
+                .join(GroupMember, GroupMember.group_id == ThreatAlert.group_id)
+                .where(
+                    ThreatAlert.scan_id == scan_id,
+                    GroupMember.user_id == current_user.id
+                )
+            ).first()
+            if group_share:
+                is_shared = True
+
+    if not is_owner and not is_admin and not is_shared:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have access to this scan.",
