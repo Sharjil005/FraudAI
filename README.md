@@ -36,9 +36,11 @@ Digital payment fraud in India alone runs into thousands of crores a year, and t
 ## Features
 
 ### 🔗 URL & Link Analysis
-- **28 lexical and structural features** extracted per URL: length distributions, subdomain depth, character entropy, digit ratios, punycode, embedded IPs, `@`-redirects, non-standard ports, hex encoding, risky file extensions
-- Detects **brand impersonation** (`sbi-verify-kyc.co`), **credential-harvesting paths**, **URL shorteners**, and **suspicious TLDs**
-- A **Random Forest classifier** blended with a weighted rule engine, so the score has both statistical and explainable-by-construction backing
+- Detects suspicious and potentially malicious URLs by analyzing their lexical, structural, and domain-level characteristics.
+- 28 lexical and structural features extracted per URL: length distributions, subdomain depth, character entropy, digit ratios, punycode, embedded IPs, @-redirects, non-standard ports, hex encoding, risky file extensions
+- Detects brand impersonation (sbi-verify-kyc.co), credential-harvesting paths, URL shorteners, and suspicious TLDs
+- A Random Forest classifier blended with a weighted rule engine, so the score has both statistical and explainable-by-construction backing
+- Provides an explainable risk score, risk level, detected indicators, and safety recommendation for every analyzed URL.
 
 ### 💬 Message & SMS Analysis
 - **TF-IDF (1–2 grams) + Logistic Regression** over a labelled scam corpus, combined with **15 categories** of scam pattern detection
