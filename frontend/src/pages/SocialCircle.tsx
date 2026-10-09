@@ -325,7 +325,7 @@ export default function SocialCircle() {
                     <Button
                       type="submit"
                       variant="primary"
-                      className="w-full justify-center bg-gradient-to-r from-cyan-400 to-indigo-500 hover:brightness-110 flex items-center gap-2"
+                      className="w-full justify-center bg-linear-to-r from-cyan-400 to-indigo-500 hover:brightness-110 flex items-center gap-2"
                       disabled={sendingInvite || !inviteEmail.trim()}
                     >
                       {sendingInvite ? (
@@ -732,10 +732,10 @@ export default function SocialCircle() {
                             {alert.sender_name}
                           </td>
                           <td className="py-3.5 font-mono text-xs">{alert.scan_type}</td>
-                          <td className="py-3.5 max-w-[200px] truncate" title={alert.target_label}>
+                          <td className="py-3.5 max-w-50 truncate" title={alert.target_label}>
                             {alert.target_label}
                           </td>
-                          <td className="py-3.5 max-w-[240px] truncate italic" title={alert.note}>
+                          <td className="py-3.5 max-w-60 truncate italic" title={alert.note}>
                             {alert.note ? `“${alert.note}”` : '—'}
                           </td>
                           <td className="py-3.5">

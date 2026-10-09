@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.services import email as email_service
 from app.models.user import User, UserRole
 from app.core.security import hash_password
+
+
+@pytest.fixture(autouse=True)
+def _use_temporary_email_directory(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(email_service, "EMAILS_DIR", tmp_path)
 
 
 def _create_test_user(db: Session, email: str, name: str) -> User:

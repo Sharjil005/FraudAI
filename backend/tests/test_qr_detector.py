@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
+import io
 
-from app.ml.qr_detector import analyse_qr, parse_qr_payload
+import pytest
+import qrcode
+
+from app.ml.qr_detector import analyse_qr, decode_qr_image, parse_qr_payload
 
 
 def test_parse_upi_uri_standard() -> None:
@@ -30,6 +33,17 @@ def test_parse_web_url() -> None:
     parsed = parse_qr_payload("https://secure-login-verify.xyz/login")
     assert parsed.qr_type == "URL"
     assert parsed.url == "https://secure-login-verify.xyz/login"
+
+
+def test_decode_qr_image_handles_generated_png() -> None:
+    payload = "upi://pay?pa=store@okaxis&pn=General+Store&am=250.50&cu=INR&tn=Invoice123"
+    image = qrcode.make(payload)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+
+    decoded = decode_qr_image(buffer.getvalue())
+
+    assert decoded == payload
 
 
 def test_safe_merchant_upi_qr() -> None:

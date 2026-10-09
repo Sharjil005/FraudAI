@@ -159,7 +159,7 @@ export function DashboardLayout() {
             </span>
             <Link
               to="/dashboard/scan/url"
-              className="hidden h-9 items-center rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-3.5 text-[13px] font-semibold text-slate-950 transition hover:brightness-110 sm:inline-flex"
+              className="hidden h-9 items-center rounded-xl bg-linear-to-r from-cyan-400 to-indigo-500 px-3.5 text-[13px] font-semibold text-slate-950 transition hover:brightness-110 sm:inline-flex"
             >
               New scan
             </Link>
@@ -168,7 +168,7 @@ export function DashboardLayout() {
                 {initials(user?.name ?? '?')}
               </span>
               <div className="hidden leading-tight sm:block">
-                <p className="max-w-[10rem] truncate text-[13px] font-medium text-ink">
+                <p className="max-w-40 truncate text-[13px] font-medium text-ink">
                   {user?.name}
                 </p>
                 <p className="text-[10px] uppercase tracking-[0.14em] text-ink-faint">
@@ -214,7 +214,7 @@ function SidebarNav({ sections }: { sections: { heading: string; items: NavItem[
                     <>
                       {isActive && (
                         <span
-                          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-cyan-400"
+                          className="absolute left-0 top-1/2 h-5 w-0.75 -translate-y-1/2 rounded-r-full bg-cyan-400"
                           aria-hidden
                         />
                       )}

@@ -29,6 +29,7 @@ pypdf>=5.0.0
 Pillow>=10.4.0
 fpdf2>=2.7.9
 opencv-python-headless>=4.10.0
+pyzbar>=0.1.9
 
 # Optional OCR (application degrades gracefully when absent)
 pytesseract>=0.3.13

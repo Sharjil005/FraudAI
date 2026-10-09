@@ -144,7 +144,7 @@ _URL_PATTERN = re.compile(r"^https?://[^\s<>\"')\]]+", re.IGNORECASE)
 
 
 def decode_qr_image(file_bytes: bytes) -> str | None:
-    """Decode a QR code from image bytes using OpenCV."""
+    """Decode a QR code from image bytes using the best available decoder."""
     if not file_bytes:
         return None
 
@@ -160,7 +160,25 @@ def decode_qr_image(file_bytes: bytes) -> str | None:
         except Exception:
             pass
 
-    # Fallback to PIL if OpenCV fails or is not available
+    try:
+        from pyzbar.pyzbar import decode as pyzbar_decode
+
+        if PIL_AVAILABLE:
+            with Image.open(io.BytesIO(file_bytes)) as img:
+                try:
+                    image = img.convert("RGB")
+                except Exception:
+                    image = img
+                results = pyzbar_decode(image)
+                for symbol in results:
+                    data = symbol.data.decode("utf-8", errors="replace").strip()
+                    if data:
+                        return data
+    except Exception:
+        pass
+
+    # Final validation only: confirm the file is still a readable image, even when no QR
+    # decoder is installed in this environment.
     if PIL_AVAILABLE:
         try:
             with Image.open(io.BytesIO(file_bytes)) as img:
